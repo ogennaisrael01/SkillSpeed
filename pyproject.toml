@@ -1,0 +1,16 @@
+[project]
+name="skillspeed"
+version="0.1.0"
+description="A tool to help children learn new skills faster."
+authors=[
+    { name="Ogenna Israel", email="ogennsisrael@gmail.com" }
+]
+readme="README.md"
+dependencies=[
+    "django>=6.0.1",
+    "djangorestframework>=3.16.1",
+    "python-dotenv>=0.21.0",
+    "gunicorn>=20.1.0",
+    "psycopg2-binary>=2.9.6",
+]
+requires-python=">=3.13"
