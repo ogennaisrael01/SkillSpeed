@@ -1,15 +1,12 @@
-FROM python:3.13-slim as builder
+# build image
+FROM python:3.13-slim AS builder
 
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONBUFFERED=1
 ENV UV_SYSTEM_PYTHON=1
 
-RUN apt-get update & apt-get upgrade -y \
-    build-essentials \
-    curl \
-     libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl
 
 WORKDIR /app
 
