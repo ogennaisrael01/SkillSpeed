@@ -16,11 +16,11 @@ WORKDIR /app
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.cargo/bin:$PATH"
 
-COPY pyproject.toml uv.lock /app
+COPY pyproject.toml uv.lock .
 
-RUN uv sync --frozen --no-dev
+RUN uv pip install --system --locked
 
-COPY . /app
+COPY . .
 
 EXPOSE 8000
 
