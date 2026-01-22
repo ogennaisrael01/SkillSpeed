@@ -1,27 +1,23 @@
 # build image
 FROM python:3.13-slim AS builder
 
-
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONBUFFERED=1
-ENV UV_SYSTEM_PYTHON=1
-
-RUN apt-get update && apt-get install -y curl
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir uv
+RUN apt-get update && apt-get install -y curl
 
-COPY pyproject.toml uv.lock .
+RUN python3 -m pip install --upgrade pip
+COPY requirements.txt /app
 
-RUN uv pip install --system . 
-RUN uv sync
+RUN pip install --no-cache-dir -r requirements.txt 
 
-COPY . .
+COPY . /app
 
 EXPOSE 8000
 
-CMD ["gunicorn", "src.core.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
 
 
 

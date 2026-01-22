@@ -3,9 +3,7 @@ version: "3.9"
 services:
   migrate:
     build: .
-    volumes:
-      - .:/app
-    command: uv run python src/manage.py migrate
+    command: ["python3", "src/manage.py", "migrate"]
     env_file:
       - .env
   web:
@@ -13,8 +11,10 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - app:/app
+      - .:/app
     command: python3 src/manage.py runserver 0.0.0.0:8000 --noreload
+    environment:
+      - PYTHONUNBUFFERED=1
     env_file:
       - .env
 volumes:

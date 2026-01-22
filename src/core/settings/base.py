@@ -11,11 +11,10 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = ""
+SENDGRID_API_KEY = env("SENDGRID_API_KEY")
+SENDGRID_SENDER = env('SENDGRID_SENDER')
 
-ALLOWED_HOSTS = []
-
+AUTH_USER_MODEL = "users.CustomUser"
 
 # Application definition
 INSTALLED_APPS = [
@@ -25,6 +24,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    "social_django",
+    'apps.users.apps.UsersConfig'
 ]
 
 MIDDLEWARE = [
@@ -57,6 +59,32 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
+AUTHENTICATION_BACKENDS = (
+    "social_core.backends.github.GithubOAuth2",
+    "social_core.backends.google.GoogleOAuth2",
+    # "social_core.backends.facebook.FacebookOAuth2",
+    "apps.users.backends.CustomBackend"
+)
+
+
+SOCIAL_AUTH_GITHUB_KEY = env("GITHUB_CLIENT_ID")
+SOCIAL_AUTH_GITHUB_SECRET = env("GITHUB_CLIENT_SECRET_KEY")
+SOCIAL_AUTH_GITHUB_SCOPE = [
+    'read:user',
+    'user:email',
+]
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env("GOOGLE_CLIENT_ID")
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env("GOOGLE_CLIENT_SECRET_KEY")
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
+    'https://www.googleapis.com/auth/userinfo.profile',
+    "https://www.googleapis.com/auth/userinfo.email",
+]
+
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
@@ -67,6 +95,14 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("REDIS_LOCATION") + "/0",
+        "TIMEOUT": 300,
+        "KEY_PREFIX": "SkillSpeed"
+    } 
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
