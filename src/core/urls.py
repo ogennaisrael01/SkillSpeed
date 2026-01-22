@@ -14,6 +14,8 @@ urlpatterns = [
 ]
 
 DEBUG = getattr(settings, "DEBUG", None)
-if DEBUG:
+DJANGO_ENV = getattr(settings, "DJANGO_SETTINGS_MODULE")
+
+if DEBUG and DJANGO_ENV != "core.settings.production":
     from debug_toolbar.toolbar import debug_toolbar_urls
     urlpatterns += debug_toolbar_urls()
