@@ -10,12 +10,12 @@ RUN apt-get update && apt-get install -y curl
 
 WORKDIR /app
 
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:$PATH"
+RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml uv.lock .
 
-RUN uv pip install --system --locked
+RUN uv pip install --system . 
+RUN uv sync
 
 COPY . .
 
