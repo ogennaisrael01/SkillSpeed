@@ -15,7 +15,7 @@ ENV PATH="/root/.cargo/bin:$PATH"
 
 COPY pyproject.toml uv.lock .
 
-RUN uv pip install --system --locked
+RUN uv pip install --system .
 
 COPY . .
 
