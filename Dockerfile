@@ -1,27 +1,24 @@
 # build image
 FROM python:3.13-slim AS builder
 
-
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONBUFFERED=1
-ENV UV_SYSTEM_PYTHON=1
-
-RUN apt-get update && apt-get install -y curl
 
 WORKDIR /app
 
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:$PATH"
+RUN apt install --upgrade pip
 
-COPY pyproject.toml uv.lock .
+RUN apt-get update && apt-get install -y curl
 
-RUN uv pip install --system .
+COPY requirements.txt /app
 
-COPY . .
+RUN pip install --no-cache-dir -r requirements.txt 
+
+COPY . /app
 
 EXPOSE 8000
 
-CMD ["gunicorn", "src.core.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
 
 
 
