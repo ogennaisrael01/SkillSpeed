@@ -14,9 +14,11 @@ SECRET_KEY = env("SECRET_KEY")
 SENDGRID_API_KEY = env("SENDGRID_API_KEY")
 SENDGRID_SENDER = env('SENDGRID_SENDER')
 
+DJANGO_SETTINGS_MODULE =  env("DJANGO_SETTINGS_MODULE", default="core.settings.development")
+
 AUTH_USER_MODEL = "users.CustomUser"
 
-# Application definition
+# Application definitionS
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
