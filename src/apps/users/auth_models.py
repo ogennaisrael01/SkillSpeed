@@ -37,7 +37,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         GUARDIAN = "GUARDIAN", "Guardian"
 
     user_id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
-    email = models.EmailField(unique=True, max_length=20)
+    email = models.EmailField(unique=True, max_length=200)
     first_name = models.CharField(max_length=200)
     last_name = models.CharField(max_length=200)
     user_role = models.CharField(max_length=200, choices=UserRoles.choices, default=None, null=True, blank=True)
