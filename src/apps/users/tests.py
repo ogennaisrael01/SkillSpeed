@@ -1,8 +1,9 @@
-from django.test import TestCase
 from .services.helpers import _genrate_url_for_account_verification, create_otp_for_user, _hash_otp_code
 from .services.templates_service import genrate_context_for_otp
 from .helpers import _send_email_to_user
+from .services.email_service import _send_mail_base
 
+from django.test import TestCase
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
@@ -40,3 +41,10 @@ class TestUserAuth(TestCase):
                    "subject": "Test Email", "template_name": "test_template.html"}
         result = _send_email_to_user(context)
         self.assertTrue(result)
+
+    def test_send_email_base(self):
+        context = {"code": "303030", "to_email": "testuser@example.com", "verification_url": "http://example.com/verify",
+                   "subject": "Test Email", "template_name": "users/otp_template.html"}
+        
+        result = _send_mail_base(context)
+        print(result)

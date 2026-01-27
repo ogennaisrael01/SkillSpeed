@@ -28,9 +28,11 @@ def send_email_on_quene(content: dict):
     """
     if content is None or any([value is None for value in content.values()]):
         raise ValidationError("Email content cannot be empty")
-    send_email = _send_mail_base(context=content)
-    if send_email:
-        logger.info("Email message quened successfully")
+    
+    try:
+        _send_mail_base(context=content)
+    except Exception:
+        raise
     else:
         logger.error("Failed to quene email message")
 
