@@ -2,6 +2,11 @@ from pathlib import Path
 import environ
 import os
 
+from celery.schedules import crontab
+
+from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -17,6 +22,8 @@ SENDGRID_SENDER = env('SENDGRID_SENDER')
 DJANGO_SETTINGS_MODULE =  env("DJANGO_SETTINGS_MODULE", default="core.settings.development")
 
 AUTH_USER_MODEL = "users.CustomUser"
+
+OTP_LIFE = env("OTP_LIFE", default=10)  # in minutes
 
 # Application definitionS
 INSTALLED_APPS = [
@@ -97,15 +104,6 @@ DATABASES = {
     }
 }
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": env("REDIS_LOCATION") + "/0",
-        "TIMEOUT": 300,
-        "KEY_PREFIX": "SkillSpeed"
-    } 
-}
-
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -141,3 +139,26 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("REDIS_LOCATION") + "/0",
+        "TIMEOUT": 300,
+        "KEY_PREFIX": "SkillSpeed"
+    } 
+}
+
+CELERY_BROKER_URL = env("REDIS_LOCATION" + "/1", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = env("REDIS_LOCATION" + "/1", default="redis://localhost:6379/1")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+timezone = 'Africa/Lagos'
+
+CELERY_BEAT_SCHEDULE = {
+    'auto-expire-otp-every-5-minutes': {
+        'task': 'apps.users.services.tasks.auto_expire_otp',
+        'schedule': crontab(minute='*/5'),
+    },
+}

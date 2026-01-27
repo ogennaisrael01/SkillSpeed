@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.conf import settings 
+from django.conf import settings
 
 from .service import health_check, test_send_email
 

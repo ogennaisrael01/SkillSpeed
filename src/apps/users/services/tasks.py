@@ -5,10 +5,18 @@ from rest_framework.exceptions import ValidationError
 from celery import shared_task
 
 from .email_service import _send_mail_base
+from ..models import OneTimePassword
+
+from django.conf import settings
+from django.db import transaction
+from django.utils import timezone
+from django.db.models import F
+from django.utils.translation import gettext_lazy as _
 
 import logging 
 
 logger = logging.getLogger(__name__)
+OTP_life_span = getattr(settings, "OTP_LIFE")
 
 @shared_task
 def send_email_on_quene(content: dict):
@@ -23,10 +31,15 @@ def send_email_on_quene(content: dict):
     send_email = _send_mail_base(context=content)
     if send_email:
         logger.info("Email message quened successfully")
-        return
     else:
         logger.error("Failed to quene email message")
-        return
 
+@shared_task
+def auto_expire_otp():
+    with transaction.atomic():
+        expired_otps = OneTimePassword.objects.filter(
+            created_at__lt=timezone.now() - timezone.timedelta(minutes=OTP_life_span)
+            ).update(is_active=~F("is_active"))
+    logger.info(_("Authomatically updated %s otps in the databaase", expired_otps.count()))
 
 
