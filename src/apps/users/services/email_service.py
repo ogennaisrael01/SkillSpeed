@@ -50,9 +50,10 @@ def _send_mail_base(context: dict) -> bool:
             raise ValidationError(f"Email failed with status: {response.status_code}")
     except KeyError:
         logger.exception("Missing keys in email context")
-        raise ValidationError("Email context is missing required keys")
+        raise 
     except Exception as e:
         logger.exception("Error preparing email")
-        raise ValidationError(f"Error preparing email: {str(e)}")
+        raise
+
 
 
