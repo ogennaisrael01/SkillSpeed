@@ -9,6 +9,6 @@ routers.register(r"register", views.RegisterViewSet, basename="register")
 
 
 urlpatterns = [
-    path("auth/", include(routers.urls))
+    path("", include(routers.urls))
     
 ]

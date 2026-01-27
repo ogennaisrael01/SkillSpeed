@@ -13,7 +13,6 @@ import logging
 import string
 import random
 
-
 max_retries = getattr(settings, "MAX_RETRY", 4)
 BASE_URL = getattr(settings, "BASE_URL", None)
 logger = logging.getLogger(__name__)
@@ -44,7 +43,7 @@ def _generate_unique_otp():
     if OneTimePassword.objects.filter(hash_code=hash_code).exists():
         logger.warning(_("OTP Already Exists!"))
         raise ValidationError(_("Failed. OTP already exists"))
-    return code
+    return code, hash_code
 
 def create_otp_for_user(user):
     if not isinstance(user, User):
@@ -52,7 +51,7 @@ def create_otp_for_user(user):
     code = _generate_unique_otp()
     try:
         with transaction.atomic():
-            OneTimePassword.objects.create(user=user, hash_code=code) 
+            OneTimePassword.objects.create(user=user, hash_code=code[1]) 
         logger.info(_("successfully created and saved OTP for user %s", user))
     except IntegrityError as exc:
         logger.error("Database error while creating OTP for user %s", user.id, exc_info=True)
@@ -60,7 +59,7 @@ def create_otp_for_user(user):
     except ValueError as exc:
         logger.error("Invalid OTP value generated for user %s", user.id, exc_info=True)
         raise ValidationError("Error validating OTP code.") from exc
-    return code
+    return code[0]
 
 def _genrate_url_for_account_verification(code):
     if BASE_URL is None:
