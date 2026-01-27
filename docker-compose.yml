@@ -13,6 +13,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   adminer:
     image: adminer:standalone
@@ -38,24 +43,28 @@ services:
   migrate:
     build: .
     container_name: migrate-server
-    command: sh -c "python3  src/manage.py makemigrations && python3 src/manage.py migrate"
+    command: ["python3", "manage.py", "migrate"]
     env_file:
       - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   web:
     build: .
     ports:
       - "8000:8000"
     depends_on:
-      - db
-      - redis
-    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
+      db:
+        condition: service_healthhy
+      migrate: 
+        condition: service_completed_successfully
+    command: ["gunicorn", "core.wsgi:application", "--reload", "--bind", "0.0.0.0:8000"]
     environment:
       - PYTHONUNBUFFERED=1
     env_file:
       - .env
+      
   celery_worker:
     build: .
     container_name: worker_server
@@ -65,6 +74,17 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+
+  celery_beat:
+    build: .
+    container_nanme: celery_beat
+    depends_on:
+      - redis
+    command: ["celery", "-A", "core.celery", "beat", "--loglevel=info"]
+    env_file:
+      - .env
+    restart: unless-stopped
+
 
 volumes:
   postgres_data:
