@@ -36,25 +36,23 @@ def _send_mail_base(context: dict) -> bool:
     try:
         html_content = render_to_string(context.get("template_name"), context)
         client = SendGridAPIClient(api_key=SENDGRID_API_KEY)
-        meessage = Mail(
+        message = Mail(
             from_email=From(email=SENDGRID_SENDER),
             to_emails=To(email=context.get("to_email")),
             subject=context.get("subject"),
-            html_content=Content("text/html",  html_content)
+            html_content=Content("text/html", html_content)
         )
-        response = client.send(message=meessage)
-        response.raise_status()
+        
+        response = client.send(message=message)
+        if response.status_code != 202:
+            logger.error(f"SendGrid failed: {response.body}")
+            raise ValidationError(f"Email failed with status: {response.status_code}")
     except KeyError:
         logger.exception("Missing keys in email context")
-        raise ValidationError("Email context is missing required keys")
+        raise 
     except Exception as e:
         logger.exception("Error preparing email")
-        raise ValidationError(f"Error preparing email: {str(e)}")
-    if response.status_code == int(202):
-        logger.info("Email Accepted successfully")
-        return True
-    else:
-        logger.info("Email Message Failed", response.status_code)
-        return False
+        raise
+
 
 
