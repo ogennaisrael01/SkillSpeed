@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 def retry_on_failure(retry):
     def hold_func(func):
         @functools.wraps(func)
-        def wrapper(func, *args, **kwargs):
+        def wrapper(*args, **kwargs):
             attempt = 0
             for _ in range(retry):
                 logger.info("Starting Task execution...")

@@ -16,7 +16,7 @@ class OneTimePassword(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
-    hash_code = models.CharField(max_length=20, unique=True)
+    hash_code = models.CharField(max_length=200, unique=True)
 
     def __str__(self):
         return f"OneTimePassword({self.user.email}, {self.is_active})"

@@ -13,7 +13,6 @@ import logging
 import string
 import random
 
-max_code = getattr(settings, "MAX_CODE", 8)
 max_retries = getattr(settings, "MAX_RETRY", 4)
 BASE_URL = getattr(settings, "BASE_URL", None)
 logger = logging.getLogger(__name__)
@@ -27,6 +26,7 @@ def _hash_otp_code(code: str):
 
 def _generate_code():
     try:
+        max_code = getattr(settings, "MAX_CODE", None)
         if max_code is None:
             max_code = int(6)
         generate_from = string.digits
@@ -43,7 +43,7 @@ def _generate_unique_otp():
     if OneTimePassword.objects.filter(hash_code=hash_code).exists():
         logger.warning(_("OTP Already Exists!"))
         raise ValidationError(_("Failed. OTP already exists"))
-    return hash_code
+    return code
 
 def create_otp_for_user(user):
     if not isinstance(user, User):
