@@ -1,4 +1,5 @@
 from rest_framework import status, permissions, viewsets
+from rest_framework.response import Response
 
 from .serializers import UserRegistrationSerializer, User, _
 from .helpers import _validate_serializer
@@ -13,14 +14,19 @@ class RegisterViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     @method_decorator(transaction.atomic)
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         valid_serializer = _validate_serializer(serializer)
         self.perform_create(valid_serializer)
-        return Response({"status": "success", "detail": _("Registration successfull. verify your account"),
-        "data": { "email": valid_serializer.validated_data.get("email"),
-                    "first_name": valid_serializer.validated_data.get("first_name"),
-                    "last_name": valid_serializer.validated_data.get("last_name")}})
+        return Response({"status": "success", 
+                        "detail": _("Registration successfull. verify your account"),
+                        "data": { 
+                            "email": valid_serializer.validated_data.get("email"),
+                            "first_name": valid_serializer.validated_data.get("first_name"),
+                            "last_name": valid_serializer.validated_data.get("last_name")
+                            }
+                        }
+                    )
 
 
 

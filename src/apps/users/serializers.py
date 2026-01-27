@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from django.db import transaction
 
 from .helpers import (_validate_email, _check_email_already_exists, _normalize_and_validate_password)
+from .services.helpers import _hash_otp_code
 
 import email_validator
 import logging
@@ -43,7 +44,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = _check_email_already_exists(valid_email.get("valid_email"))
         if user:
             raise serializers.ValidationError(_(f"user with {user} already exists"))
-        return valid_email
+        return valid_email.get("valid_email")
     
     def validate_password(self, value):
         _normalize_and_validate_password(value)
@@ -62,3 +63,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             return user
         except Exception:
             raise
+
+class UserVerificationSerializer(serializers.Serializer):
+    code = serializers.CharField(write_only=True, required=True)
+    email = serializers.EmailField(write_only=True, required=True)
+
+    def validate_email(self, value):
+        if _validate_email(value).get("success"):
+            return _validate_email(value).get("valid_email")
+
+    def validate_code(self, value):
+        if not isinstance(value, str):
+            raise serializers.ValidationError(_("%s is not a valid str instance", value))
+        return value
+    
