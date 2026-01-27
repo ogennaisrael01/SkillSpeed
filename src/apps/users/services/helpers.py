@@ -64,5 +64,5 @@ def create_otp_for_user(user):
 def _genrate_url_for_account_verification(code):
     if BASE_URL is None:
         return
-    verification_url = BASE_URL + "api/v1/auth/verify/?code=%s", code
+    verification_url = BASE_URL + f"api/v1/auth/verify/?code={code}"
     return verification_url

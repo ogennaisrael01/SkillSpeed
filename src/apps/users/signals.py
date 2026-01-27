@@ -20,7 +20,7 @@ def post_save_otp_after_account_registration(sender, instance, created, **kwargs
     try:
         code = create_otp_for_user(instance)
         url = _genrate_url_for_account_verification(code)
-        context = genrate_context_for_otp(code, url, instance)
+        context = genrate_context_for_otp(code, url, instance.email)
         _send_email_to_user(context)
         logger.debug(f"OTP created and email sent for user: {instance.email}")
     except Exception as e:

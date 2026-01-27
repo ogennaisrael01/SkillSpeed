@@ -27,23 +27,24 @@ def _send_email_to_user(context: dict):
     """
     if context is None:
         raise ValidationError("Missing Content Body")
-    user = context.get("user")
-    subject = context.get("subect")
+    email = context.get("email")
+    subject = context.get("subject")
     template_name = context.get("template_name")
-    if not isinstance(user, User):
-        logger.error("User is not a valid custom user instance")
-        raise ValidationError("'user' is not a valid 'CustomUser' instance")
+    if not email:
+        raise ValidationError("email cannot be empty")
     if not subject:
         raise ValidationError("Email requires a subject")
     if not template_name:
         raise ValidationError("Please provide a template name to send well structured notifications")
     
-    if not User.objects.filter(email=user.email).exists():
+    if not User.objects.filter(email=email).exists():
         raise ValidationError("User dosent exits in our database")
-    email = user.email
+    email = email
     context.update({"to_email": email, "subject": subject, "template_name": template_name})
     try:
         send_email_on_quene.delay(context)
+        logger.info(f"Email sent to quene for {email}")
+        return {"success": True, "message": "Email sent to quene successfully"}
     except Exception:
         logger.exception("Exception while sending email.")
         raise

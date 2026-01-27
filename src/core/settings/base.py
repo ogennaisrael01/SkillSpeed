@@ -25,6 +25,7 @@ AUTH_USER_MODEL = "users.CustomUser"
 
 OTP_LIFE = env("OTP_LIFE", default=10)  # in minutes
 
+BASE_URL = env("BASE_URL", default="http://localhost:8000/")
 # Application definitionS
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -35,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     "social_django",
-    'apps.users.apps.UsersConfig'
+    'apps.users.apps.UsersConfig',
 ]
 
 MIDDLEWARE = [
