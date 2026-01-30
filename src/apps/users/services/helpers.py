@@ -4,9 +4,10 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 from ..exceptions import  retry_on_failure
-from ..models import OneTimePassword
+from ..models import OneTimePassword, PasswordReset
 
 import hashlib
 import logging
@@ -48,10 +49,10 @@ def _generate_unique_otp():
 def create_otp_for_user(user):
     if not isinstance(user, User):
         raise ValidationError(_("%s is not a valid 'User' Instance", user))
-    code = _generate_unique_otp()
+    code, hash_code = _generate_unique_otp()
     try:
         with transaction.atomic():
-            OneTimePassword.objects.create(user=user, hash_code=code[1]) 
+            OneTimePassword.objects.create(user=user, hash_code=hash_code) 
         logger.info(_("successfully created and saved OTP for user %s", user))
     except IntegrityError as exc:
         logger.error("Database error while creating OTP for user %s", user.id, exc_info=True)
@@ -59,10 +60,29 @@ def create_otp_for_user(user):
     except ValueError as exc:
         logger.error("Invalid OTP value generated for user %s", user.id, exc_info=True)
         raise ValidationError("Error validating OTP code.") from exc
-    return code[0]
+    return code
 
 def _genrate_url_for_account_verification(code):
     if BASE_URL is None:
         return
     verification_url = BASE_URL + f"api/v1/auth/verify/?code={code}"
     return verification_url
+
+
+def _generate_url_for_password_reset(code):
+    if BASE_URL is None:
+        return
+    verification_url = BASE_URL + f"api/v1/auth/password/reset/confirm/?token={code}"
+    return verification_url or None
+
+def create_password_reset_for_user(user: User):
+    if user is None:
+        return 
+    default_token_generator = PasswordResetTokenGenerator()
+    token = default_token_generator.make_token(user=user)
+    url = _generate_url_for_password_reset(token)
+    if token:
+        with transaction.atomic():
+            PasswordReset.objects.create(user=user, reset_code=token, reset_token=token.strip())
+        logger.debug("Successfully Created And Password Reset for User")
+    return None

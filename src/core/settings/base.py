@@ -26,6 +26,8 @@ AUTH_USER_MODEL = "users.CustomUser"
 OTP_LIFE = env("OTP_LIFE", default=10)  # in minutes
 
 BASE_URL = env("BASE_URL", default="http://localhost:8000/")
+APP_NAME = env("APP_NAME", default="SkillSpeed")
+
 # Application definitionS
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -36,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     "social_django",
+    "drf_yasg",
     'apps.users.apps.UsersConfig',
 ]
 
@@ -162,4 +165,12 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'apps.users.services.tasks.auto_expire_otp',
         'schedule': crontab(minute='*/5'),
     },
+    "auto-expire-reset-code": {
+        "task": "apps.users.services.tasks.auto_deactivate_reset_code",
+        "schedule": crontab(minute="*/5")
+    },
+    "auto-delete-expire-reset-code-after-every-10-hours":{
+        "task": "apps.users.services.tasks.auto_delete_expires_reset_codes",
+        "schedule": crontab(hour="*/10")
+    }
 }

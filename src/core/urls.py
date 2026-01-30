@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 
+from .drf_ysag import get_swagger_view
 from .service import health_check, test_send_email
 
 urlpatterns = [
@@ -9,6 +10,11 @@ urlpatterns = [
     path("api/v1/auth/", include("apps.users.urls")),
     path("health/", health_check, name="health"),
     path("email/", test_send_email, name="email"),
+]
+
+urlpatterns += [
+    path("docs/", get_swagger_view().with_ui("swagger", cache_timeout=10), name="api_docs"),
+    path("redocs/", get_swagger_view().with_ui("redoc", cache_timeout=10), name="api_redocs")
 ]
 
 DEBUG = getattr(settings, "DEBUG", None)
