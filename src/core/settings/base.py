@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'rest_framework',
     "social_django",
     "drf_yasg",
+    "rest_framework_simplejwt.token_blacklist",
+
     'apps.users.apps.UsersConfig',
 ]
 
@@ -71,6 +73,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+REST_FRAMEWORK = {
+    "DEFAULT_AUHTENTICATION_CLASSES": {
+        "rest_framework_simplejwt.authentication.JWTAuthentication"
+    },
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny"
+    ]
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timezone.timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timezone.timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "UPDATE_LAST_LOGIN": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "USER_ID_FIELD": "user_id",
+    "USER_ID_CLAIM": "user_id",
+}
 
 AUTHENTICATION_BACKENDS = (
     "social_core.backends.github.GithubOAuth2",

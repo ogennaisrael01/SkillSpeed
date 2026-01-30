@@ -80,7 +80,7 @@ def _validate_serializer(serializer):
     
 def _get_user_by_email(email: str):
     try:
-        user = User.objects.get(email__iexact=email)
+        user = User.objects.get(email=email)
         return user
     except User.DoesNotExist:
         return None
@@ -138,3 +138,9 @@ def _get_reset_code_or_none(code):
         return code
     except PasswordReset.DoesNotExist:
         return None
+
+def user_can_authenticate(user):
+    if hasattr(user, "is_active") and hasattr(user, "is_verified"):
+        return (getattr(user, "is_active", True) and 
+                getattr(user, "is_verified", True))
+    return False

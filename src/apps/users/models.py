@@ -36,7 +36,7 @@ class OneTimePassword(models.Model):
 
 
 class PasswordReset(models.Model):
-    reset_id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
+    reset_id = models.UUIDField(primary_key=True, max_length=20, default=uuid.uuid4, unique=True)
     reset_code = models.CharField(max_length=200, null=False, blank=False, db_index=True)
     reset_token = models.URLField(null=True, blank=True, db_index=True)
 
