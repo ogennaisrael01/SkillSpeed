@@ -4,7 +4,8 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
 
-from .helpers import (_validate_email, _check_email_already_exists, _normalize_and_validate_password)
+from .helpers import (_validate_email, _check_email_already_exists, _normalize_and_validate_password,
+                      _get_user_by_email, _get_code, _get_reset_code_or_none)
 from .services.helpers import _hash_otp_code
 
 import email_validator
@@ -82,3 +83,79 @@ class UserVerificationSerializer(serializers.Serializer):
         if not isinstance(value, str):
             raise serializers.ValidationError(_("%s is not a valid str instance", value))
         return value
+    
+    def validate(self, attrs):
+        email, code = attrs.get("email"), attrs.get("code")
+        if not any([email, code]):
+            raise serializers.ValidationError(_("'email' or code is required to valaidate account"))
+        if _check_email_already_exists(email):
+            raise serializers.ValidationError("Account already verified and ready for login")
+        user = _get_user_by_email(email)
+        if not user.account_status == User.AccountStatus.ACTIVE:
+            raise serializers.ValidationError("Account already deactivated")
+        one_time_passwrod = _get_code(code, user)
+        if any(user, one_time_passwrod) is None:
+            raise serializers.ValidationError(_("Invalid code or email provided"))
+        if not one_time_passwrod.is_active or one_time_passwrod.is_used:
+            raise serializers.ValidationError("Password already expired or used. Request another one")
+        return attrs
+
+class OneTimePasswordResendSerializer(serializers.Serializer):
+    email = serializers.EmailField(write_only=True, required=True)
+
+    def validate_email(self, value):
+        valid_emial = _validate_email(value.strip())
+        user = _get_user_by_email(valid_emial)
+        if user is None:
+            raise serializers.ValidationError(_("Invalid credentials provided"), code="invalid_email_address")
+        
+        return valid_emial
+    
+class PasswordResetRequestSerializer(OneTimePasswordResendSerializer):
+    pass
+
+class PasswordResetCodeSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=100, write_only=True, required=True)
+    password = serializers.CharField(max_length=100, write_only=True, required=True)
+    confirm_password = serializers.CharField(max_length=100, write_only=True, required=True)
+
+    def validate(self, attrs: dict) -> dict:
+        password = attrs.get("password")
+        confirm_password = attrs.get("confirm_password")
+        if password != confirm_password:
+            raise serializers.ValidationError(_("Password mismatch. Please provide a matching password"))
+        return attrs
+    def validate_password(self, value):
+        password_validate = UserRegistrationSerializer()
+        return password_validate.validate_password(value)
+    
+    def validate_confirm_password(self, value):
+        confirm_password_validate = UserRegistrationSerializer()
+        return confirm_password_validate.validate_confirm_password(value)
+    
+    def validate_code(self, value):
+        code = value.strip()
+        code_instance = _get_reset_code_or_none(code)
+        if code_instance is None:
+            raise serializers.ValidationError("Invalid code provided", code="invalid_request")
+        if code_instance.user is None:
+            raise serializers.ValidationError("Invalid", code="user_invalid")
+        return value
+    
+class PasswordResetUrlSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=100, write_only=True, required=True)
+    confirm_password = serializers.CharField(max_length=100, write_only=True, required=True)
+
+    def validate(self, attrs: dict) -> dict:
+        password = attrs.get("password")
+        confirm_password = attrs.get("confirm_password")
+        if password != confirm_password:
+            raise serializers.ValidationError(_("Password mismatch. Please provide a matching password"))
+        return attrs
+    def validate_password(self, value):
+        password_validate = UserRegistrationSerializer()
+        return password_validate.validate_password(value)
+    
+    def validate_confirm_password(self, value):
+        confirm_password_validate = UserRegistrationSerializer()
+        return confirm_password_validate.validate_confirm_password(value)

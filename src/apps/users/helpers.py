@@ -1,8 +1,11 @@
 from .services.tasks import send_email_on_quene, logger
+from .services.helpers import _hash_otp_code
+from .models import OneTimePassword, PasswordReset
 
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from django.db import transaction 
+from django.db import transaction, IntegrityError
+from django.utils import timezone
 from django.contrib.auth.password_validation import (validate_password as _validate_password, 
                                                      MinimumLengthValidator)
 from django.utils.translation import gettext_lazy as _
@@ -10,6 +13,8 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 import email_validator
+
+from typing import Optional
 
 User = get_user_model()
 
@@ -28,19 +33,12 @@ def _send_email_to_user(context: dict):
     if context is None:
         raise ValidationError("Missing Content Body")
     email = context.get("email")
-    subject = context.get("subject")
-    template_name = context.get("template_name")
-    if not email:
-        raise ValidationError("email cannot be empty")
-    if not subject:
-        raise ValidationError("Email requires a subject")
-    if not template_name:
-        raise ValidationError("Please provide a template name to send well structured notifications")
-    
+    required_fields = ("email", "subject", "templete_name")
+    if (context.get(field) for field in required_fields) is None:
+        raise ValidationError("Please provides the required fields for email OTP.")
     if not User.objects.filter(email=email).exists():
         raise ValidationError("User dosent exits in our database")
-    email = email
-    context.update({"to_email": email, "subject": subject, "template_name": template_name})
+    context.update({"to_email": email})
     try:
         send_email_on_quene.delay(context)
         logger.info(f"Email sent to quene for {email}")
@@ -61,9 +59,8 @@ def _validate_email(email: str) -> dict:
 def _check_email_already_exists(valid_email: str) -> bool:
     if valid_email is None:
         raise ValidationError("email field is emapty")
-    with transaction.atomic():
-        if User.objects.filter(email=valid_email, is_active=True, is_verified=True):
-            return True
+    if User.objects.filter(email=valid_email, is_active=True, is_verified=True):
+        return True
     return False
 
 def get_error_message():
@@ -81,7 +78,63 @@ def _validate_serializer(serializer):
     serializer.is_valid(raise_exception=True)
     return serializer
     
+def _get_user_by_email(email: str):
+    try:
+        user = User.objects.get(email__iexact=email)
+        return user
+    except User.DoesNotExist:
+        return None
 
+def _get_code(code: str, user):
+    hash_code = _hash_otp_code(code)
+    try:
+        one_time_password = OneTimePassword.objects.get(hash_code__iexact=hash_code, user=user)
+        return one_time_password
+    except OneTimePassword.DoesNotExist:
+        return None
     
+def _verify_account(user, code_instance: OneTimePassword) -> dict:
+        if not isinstance(user, User):
+            raise ValidationError(_("'user is not a valid user instance"))
+        try:
+            with transaction.atomic():
+                user.is_active = True
+                user.is_verified = True
+                user.verified_at = timezone.now()
+                code_instance.is_used = False
+                user.save(update_fields=['is_active', "is_verified"])
+                code_instance.save(update_fields=["is_used"])
+        except IntegrityError:
+            raise
+        except Exception:
+            raise ValidationError(_("Account verification due to common exception errors"))
+        return {"success": True, "message": "Account verified successfully"}
+
+def _get_one_time_code_or_none(code: str):
+    hash_code = _hash_otp_code(code)
+    try:
+        one_time_password = OneTimePassword.objects.get(hash_code__iexact=hash_code)
+        return one_time_password
+    except OneTimePassword.DoesNotExist:
+        return None
     
-        
+def _get_reset_token_or_none(token):
+    try:
+        token = PasswordReset.objects.get(reset_token=token.strip(), is_active=True)
+        return token
+    except PasswordReset.DoesNotExist:
+        return None
+    
+def save_user_password(user, password):
+    account_status = getattr(user, "account_status")
+    if account_status != "ACTIVE":
+        return 
+    user.set_password(password)
+    user.save(update_fields=["password"])
+
+def _get_reset_code_or_none(code):
+    try:
+        code = PasswordReset.objects.get(reset_code=code.strip(), is_active=True)
+        return code
+    except PasswordReset.DoesNotExist:
+        return None

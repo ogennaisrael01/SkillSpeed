@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from celery import shared_task
 
 from .email_service import _send_mail_base
-from ..models import OneTimePassword
+from ..models import OneTimePassword, PasswordReset
 
 from django.conf import settings
 from django.db import transaction
@@ -43,3 +43,13 @@ def auto_expire_otp():
             created_at__lt=timezone.now() - timezone.timedelta(minutes=OTP_life_span)
             ).update(is_active=~F("is_active"))
 
+@shared_task
+def auto_deactivate_reset_code():
+    with transaction.atomic():
+        PasswordReset.objects.filter(
+            created_at__lt=timezone.now() - timezone.timedelta(minutes=OTP_life_span)
+            ).update(is_active=~F("is_active"))
+
+@shared_task       
+def auto_delete_expires_reset_codes():
+    PasswordReset.objects.filter(is_active=False).delete()
