@@ -24,11 +24,8 @@ def send_email_on_quene(content: dict):
     Docstring for send_email_on_quene
     
     :param content: Description
-    :type content: dict
+    :type content: 
     """
-    if content is None or any([value is None for value in content.values()]):
-        raise ValidationError("Email content cannot be empty")
-    
     try:
         _send_mail_base(context=content)
     except Exception:

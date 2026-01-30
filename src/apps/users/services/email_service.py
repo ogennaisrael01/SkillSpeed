@@ -29,9 +29,10 @@ def _send_mail_base(context: dict) -> bool:
         raise ValidationError("'SENDGRID_API_KEY' cannot be empty")
     if SENDGRID_SENDER is None:
         logger.warning("'SENDGRID_SENDER' sender is empty, authenticate in sendgrid dashboard")
-    if any(value is None for value in context.values()):
-        logger.warning("Email context is incomplete")
-        raise ValidationError("Email context cannot have None values")
+    required_fiedls = ("email", "subject", "template_name")
+    if (context.get(field) for field in required_fiedls) is None:
+        raise ValidationError("email context is required. provide accurate payload body")
+    
     context.update({"app_name": APP_NAME})
     try:
         html_content = render_to_string(context.get("template_name"), context)
