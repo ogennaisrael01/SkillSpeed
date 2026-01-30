@@ -94,7 +94,7 @@ class UserVerificationSerializer(serializers.Serializer):
         if not user.account_status == User.AccountStatus.ACTIVE:
             raise serializers.ValidationError("Account already deactivated")
         one_time_passwrod = _get_code(code, user)
-        if any(user, one_time_passwrod) is None:
+        if any([user, one_time_passwrod]) is None:
             raise serializers.ValidationError(_("Invalid code or email provided"))
         if not one_time_passwrod.is_active or one_time_passwrod.is_used:
             raise serializers.ValidationError("Password already expired or used. Request another one")
@@ -109,7 +109,7 @@ class OneTimePasswordResendSerializer(serializers.Serializer):
         if user is None:
             raise serializers.ValidationError(_("Invalid credentials provided"), code="invalid_email_address")
         
-        return valid_email
+        return valid_email.get("valid_email")
     
 class PasswordResetRequestSerializer(OneTimePasswordResendSerializer):
     pass

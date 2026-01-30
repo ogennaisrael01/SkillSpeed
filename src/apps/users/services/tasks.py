@@ -24,9 +24,8 @@ def send_email_on_quene(content: dict):
     Docstring for send_email_on_quene
     
     :param content: Description
-    :type content: dict
+    :type content: 
     """
-    
     try:
         _send_mail_base(context=content)
     except Exception:

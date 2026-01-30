@@ -96,10 +96,11 @@ class OneTimePasswordResendView(APIView):
         valid_serializer = _validate_serializer(serializer)
         validated_data = valid_serializer.validated_data
         email = validated_data.get("email")
-        try: 
+        try:
             user = _get_user_by_email(email)
             code = create_otp_for_user(user)
             context = genrate_context_for_otp(code=code, email=user.email)
+            print(context)
             _send_email_to_user(context=context)
             logger.info("code_resend_request", extra={"email": email})       
         except User.DoesNotExist:
