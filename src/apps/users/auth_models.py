@@ -36,6 +36,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         INSTRUCTOR =  "INSTRUCTOR", "Instructor"
         GUARDIAN = "GUARDIAN", "Guardian"
 
+    class ActiveProfile(models.TextChoices):
+        CHILD = "CHILD", "Child"
+        GUARDIAN = "GUARDIAN", "Guardian"
+
     user_id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
     email = models.EmailField(unique=True, max_length=200)
     first_name = models.CharField(max_length=200)
@@ -48,6 +52,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
 
     # account status
+    active_profile = models.CharField(max_length=200, choices=ActiveProfile, default=ActiveProfile.GUARDIAN)
     account_status = models.CharField(max_length=200, 
                                       choices=AccountStatus.choices,
                                         default=AccountStatus.ACTIVE) # active, suspended, deactivated

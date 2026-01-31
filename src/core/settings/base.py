@@ -189,9 +189,5 @@ CELERY_BEAT_SCHEDULE = {
     "auto-expire-reset-code": {
         "task": "apps.users.services.tasks.auto_deactivate_reset_code",
         "schedule": crontab(minute="*/5")
-    },
-    "auto-delete-expire-reset-code-after-every-10-hours":{
-        "task": "apps.users.services.tasks.auto_delete_expires_reset_codes",
-        "schedule": crontab(hour="*/10")
     }
 }

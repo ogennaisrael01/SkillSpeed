@@ -26,3 +26,4 @@ def post_save_otp_after_account_registration(sender, instance, created, **kwargs
     except Exception as e:
         logger.error(f"Error in post_save signal for {instance.email}: {e}")
 
+

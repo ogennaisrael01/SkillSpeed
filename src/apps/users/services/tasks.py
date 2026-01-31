@@ -46,7 +46,3 @@ def auto_deactivate_reset_code():
         PasswordReset.objects.filter(
             created_at__lt=timezone.now() - timezone.timedelta(minutes=OTP_life_span)
             ).update(is_active=~F("is_active"))
-
-@shared_task       
-def auto_delete_expires_reset_codes():
-    PasswordReset.objects.filter(is_active=False).delete()

@@ -31,7 +31,7 @@ class CustomObtainPairSerializer(TokenObtainPairSerializer):
         self.user = user
         data.update({"user_data": {
             "user_id": user.pk, "email": user.email,
-            "name": user.full_name if user.full_name else None
+            "name": user.get_full_name_or_none() if user.get_full_name_or_none() else None
         }})
         return data
     

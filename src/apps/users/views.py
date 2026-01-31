@@ -132,7 +132,7 @@ class PasswordResetViewSet(viewsets.ModelViewSet):
             url = _generate_url_for_password_reset(token)
 
             context = generate_context_for_password_reset(code=code, verification_url=url,
-                                                            email=user.email, name=user.full_name,)
+                                                            email=user.email, name=user.get_full_name_or_none(),)
             _send_email_to_user(context=context)
             logger.info("password_reset_requested", extra={
                                     "user_id": user.pk, "email": user.email,},)
