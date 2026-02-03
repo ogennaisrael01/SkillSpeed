@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "social_django",
     "drf_yasg",
     "rest_framework_simplejwt.token_blacklist",
+    "django_filters",
 
     'apps.users.apps.UsersConfig',
     "apps.skills.apps.SkillsConfig",
