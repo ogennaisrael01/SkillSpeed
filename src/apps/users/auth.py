@@ -69,6 +69,6 @@ class CustomLogoutSerializer(serializers.Serializer):
             outstanding_tokens = OutstandingToken.objects.filter(user=user).all()
             # black list all outstanding token for this user
             BlacklistedToken.objects.bulk_create(
-                BlacklistedToken.objects.create(token=token) for token in outstanding_tokens
+                BlacklistedToken(token=token) for token in outstanding_tokens
             )
         return attrs

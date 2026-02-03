@@ -7,7 +7,7 @@ import uuid
 User = get_user_model()
 
 class Guardian(models.Model):
-    guadian_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4)
+    guardian_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="guardian")
 
     display_name = models.CharField(max_length=200, null=True, blank=True)
@@ -23,7 +23,7 @@ class Guardian(models.Model):
         return _(f"Guardian profile {self.display_name}: {self.is_active}")
     
     class Meta:
-        erbose_name = _("Guardian")
+        verbose_name = _("Guardian")
         verbose_name_plural = _("Guardians")
         indexes = [
             models.Index(fields=["is_active", "is_deleted"], name="active_deleted_idx")
@@ -38,7 +38,7 @@ class ChildProfile(models.Model):
 
     child_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4)
 
-    guardian = models.ForeignKey(Guardian, on_delete=models.CASCADE, related_name="child")
+    guardian = models.ForeignKey(User, on_delete=models.CASCADE, related_name="children")
 
     gender = models.CharField(max_length=200, choices=GenderChoices.choices, default=None)
     date_of_birth = models.DateField(null=False, blank=False)
@@ -93,13 +93,43 @@ class ChildInterest(models.Model):
     class Meta:
         verbose_name = _("Interest")
         indexes = [
-            models.Index(fields=["interest_id"], name="id_idx"),
+            models.Index(fields=["interest_id"], name="pk_idx"),
             models.Index(fields=["is_active", "is_deleted"], name="act_idx")
 
         ]
         ordering = ("-created_at")
 
-
-
 class Instructor(models.Model):
-    pass
+    instructor_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4, db_index=True)
+
+    display_name = models.CharField(max_length=200)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"InstructorProfile({self.user.get_full_name_or_none()}, {self.is_active})"
+    
+
+class Certificates(models.Model):
+    user = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name="certificates")
+    certificate_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4, db_index=True)
+    name = models.CharField(max_length=200)
+    issued_on = models.DateField(null=True, blank=True)
+    issued_by = models.CharField(max_length=200)
+    is_active = models.BooleanField(default=True, db_index=True)
+    description = models.TextField(null=True, blank=True)
+    image = models.URLField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Certificates for instructor({self.name} {self.issued_on})"
+
+    class Meta:
+        verbose_name = _("Certificate")
+
+
