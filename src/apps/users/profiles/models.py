@@ -70,7 +70,7 @@ class ChildProfile(models.Model):
 
         ]
 
-        ordering = ("-created_at")
+        ordering = ("-created_at",)
 
 class ChildInterest(models.Model):
     interest_id = models.UUIDField(max_length=20, unique=True, primary_key=True, default=uuid.uuid4)
@@ -97,7 +97,7 @@ class ChildInterest(models.Model):
             models.Index(fields=["is_active", "is_deleted"], name="act_idx")
 
         ]
-        ordering = ("-created_at")
+        ordering = ("-created_at",)
 
 class Instructor(models.Model):
     instructor_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4, db_index=True)

@@ -159,3 +159,14 @@ class PasswordResetUrlSerializer(serializers.Serializer):
     def validate_confirm_password(self, value):
         confirm_password_validate = UserRegistrationSerializer()
         return confirm_password_validate.validate_confirm_password(value)
+
+
+class UserReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "email", "first_name",
+            "last_name", "user_role",
+            "is_active", "account_status",
+            
+        ]
