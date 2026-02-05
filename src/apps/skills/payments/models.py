@@ -12,7 +12,7 @@ class Purchase(models.Model):
     class PurchaseStatus(models.TextChoices):
         PENDING = 'PENDING', 'Pending'
         FAILED = "FAILED", "Failed"
-        COMPLETED = "COMPLETEED", "Completed"
+        COMPLETED = "COMPLETED", "Completed"
 
     purchase_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4)
 
@@ -40,5 +40,6 @@ class Purchase(models.Model):
             models.Index(fields=['tx_ref']),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['tx_ref'], name='unique_tx_ref_per_purchase')
+            models.UniqueConstraint(fields=['tx_ref'], name='unique_tx_ref_per_purchase'),
+            models.UniqueConstraint(fields=['skill', "purchased_for"], name='unique_purchase_id'),
         ]

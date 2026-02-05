@@ -145,8 +145,9 @@ class EnrollmentSerializer(serializers.Serializer):
                 raise serializers.ValidationError("payment price doesen't match")   
             with transaction.atomic():
                 Enrollment.objects.create(skill=skill, child_profile=child_profile)
-        with transaction.atomic():
-            Enrollment.objects.create(skill=skill, child_profile=child_profile)
+        else:
+            with transaction.atomic():
+                Enrollment.objects.create(skill=skill, child_profile=child_profile)
         return validated_data
 
 class EnrollmentReadSerializer(serializers.ModelSerializer):

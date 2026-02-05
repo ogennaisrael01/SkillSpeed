@@ -14,9 +14,11 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE("Starting Tasks..."))
         roles = getattr(self.User.UserRoles, "choices")
         for _ in range(50):
+            role = random.choice(roles)
+            self.stdout.write(self.style.NOTICE(f"Creating user with role {role[0]}"))
             self.User.objects.create_user(email=self.faker.email(safe=True),
                                           first_name=self.faker.file_name(), last_name=self.faker.last_name(),
                                           password=self.faker.password(length=6), is_active=True, is_verified=True,
-                                          user_role=(role[0] for role in roles))
+                                          user_role=role[0])
             
         self.stdout.write(self.style.SUCCESS("SuccessFully Populated user table"))

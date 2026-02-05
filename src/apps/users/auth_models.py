@@ -6,12 +6,12 @@ import uuid
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email: str, password: str = None, user_role=None, **extra_fields):
+    def create_user(self, email: str, password: str = None, user_role: str =None, **extra_fields):
         """"""
         if not all([email]):
             raise ValueError("Email is required")
         valid_email = self.normalize_email(email)
-        user = self.model(email=valid_email, user_role=None, **extra_fields)
+        user = self.model(email=valid_email, user_role=user_role, **extra_fields)
         if password:
             user.set_password(password)
         else:
