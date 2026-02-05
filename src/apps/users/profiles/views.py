@@ -49,7 +49,7 @@ class ProfileManagementViewsets(viewsets.ModelViewSet):
             qs = Instructor.objects.select_related("user").prefetch_related("certificates")
             return qs.filter(is_active=True).all()
         elif user_role == User.UserRoles.GUARDIAN:
-            qs = Guardian.objects.select_related("user").prefetch_related("children", "children__interest")
+            qs = Guardian.objects.select_related("user", "user__guardian")
             return qs.filter(is_active=True, is_deleted=False).all()
         return None
      
@@ -72,7 +72,7 @@ class ProfileManagementViewsets(viewsets.ModelViewSet):
             return [IsOwner()]
         if self.action in ("child_onboard", "role_switch"): 
             return [IsGuardian()]
-        if self.action in ("list"):
+        if self.action == "list":
             return [IsAdminOrInstructor()]
         return [permissions.IsAuthenticated()]
     
@@ -98,7 +98,7 @@ class ProfileManagementViewsets(viewsets.ModelViewSet):
         return Response({"status": "success", "detail": valid_serializer.data}, status=status.HTTP_200_OK)
     
     @method_decorator(transaction.atomic)
-    @action(methods=["post"], detail=False, url_path="child")
+    @action(methods=["post"], detail=False, url_path="child/onboard")
     def child_onboard(self, request, *args, **kwargs) -> Response:
         serializer = ChildProfileCreateSerializer(data=request.data, context={"request": request})
         valid_serializer: ListSerializer | transaction.Any | ChildProfileCreateSerializer =  _validate_serializer(serializer=serializer)
@@ -106,15 +106,14 @@ class ProfileManagementViewsets(viewsets.ModelViewSet):
         self.perform_create(serializer)
         return Response({"status": "success", "deatil": valid_serializer.validated_data}, status=status.HTTP_201_CREATED)
     
+    @method_decorator(cache_page(60 * 15))
     @action(methods=["get"], detail=False, url_path="me")
     def user_profile(self, request, *args, **kwargs) -> Response:
-        queryset: BaseManager[Guardian] = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
         if queryset is None:
             return Response({"status": "error", "detail": "No user profile found"}, status=status.HTTP_404_NOT_FOUND)
-        user: transaction.Any | None = getattr(request, "user", None) if hasattr(request, "user") else None
-        profile: Guardian = get_object_or_404(queryset, user=user)
-        if Guardian.DoesNotExist:
-            return Response({"status": "error", "detail": "No user profile found"}, status=status.HTTP_404_NOT_FOUND)
+        user = getattr(request, "user", None) if hasattr(request, "user") else None
+        profile = queryset.filter(user=user)
         serializer: NoReturn = self.get_serializer(profile, many=True)
         return Response({"status": "success", "detail": serializer.data}, status=status.HTTP_200_OK)
 

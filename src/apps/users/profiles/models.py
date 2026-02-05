@@ -20,7 +20,7 @@ class Guardian(models.Model):
     deleted_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return _(f"Guardian profile {self.display_name}: {self.is_active}")
+        return f"Guardian profile {self.display_name}: {self.is_active}"
     
     class Meta:
         verbose_name = _("Guardian")
@@ -32,9 +32,9 @@ class Guardian(models.Model):
 
 class ChildProfile(models.Model):
     class GenderChoices(models.TextChoices):
-        MALE = "MALE", "Male"
-        FEMALE = "FEMALE", "Female"
-        OTHER = "OTHER",  "Other"
+        MALE = "MALE"
+        FEMALE = "FEMALE"
+        OTHER = "OTHER"
 
     child_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4)
 

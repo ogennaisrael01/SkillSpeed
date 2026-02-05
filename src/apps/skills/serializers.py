@@ -7,7 +7,9 @@ from django.shortcuts import get_object_or_404
 
 from .models import SkillCategory, Skills, Enrollment
 from ..users.serializers import UserReadSerializer
+from ..users.profiles.serializers import ChildReadSerializer
 from .payments.models import Purchase
+from .helpers import _child_age_or_none, _is_age_appropriate
 
 import email_validator
 
@@ -81,6 +83,7 @@ class SkillReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Skills
         fields = [
+            "skill_id",
             "category", "user",
             "name", "price",
             "description", "min_age",
@@ -90,7 +93,7 @@ class SkillReadSerializer(serializers.ModelSerializer):
         ]
 
 class EnrollmentSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(required=True)
 
     default_error_messages = {
         "invalid_email": _("the email you provided is invalid"),
@@ -110,24 +113,49 @@ class EnrollmentSerializer(serializers.Serializer):
             raise serializers.ValidationError(_("email mismatch"))
         return value
 
-    def create(self, validated_data):
+    def validate(self, attrs):
         request = self.context.get("request")
         skill = self.context.get("skill")
         child_profile = self.context.get("profile")
+        print(child_profile, skill)
         user = getattr(request, "user")
         if Enrollment.objects.filter(child_profile=child_profile, skill=skill , is_active=True).exists():
             raise serializers.ValidationError(_('you already enrolled for this skill'))
         if child_profile not in user.children.all():
             raise serializers.ValidationError(_("Invalid request, you cannot perform this action"))
+        child_age = _child_age_or_none(child_profile=child_profile)
+        if child_age is None:
+            raise serializers.ValidationError(_("Child age cannot be empty, its helps in giving you the best"))
+        if not _is_age_appropriate(skill, child_age):
+            raise serializers.ValidationError(
+                _("This skill is not appropriate for the child's age."),
+                code="age_inappropriate_skill")
+        return attrs
+        
+    def create(self, validated_data):
+        request = self.context.get("request")
+        skill = self.context.get("skill")
+        child_profile = self.context.get("profile")
+        user = getattr(request, "user")
         if skill.is_paid:
             payment = get_object_or_404(Purchase, skill=skill, purchased_by=user, purchased_for=child_profile)
             if payment.purchase_status != Purchase.PurchaseStatus.COMPLETED:
                 raise serializers.ValidationError(_("payment is not verified"))
             if payment.price != skill.price:
-                raise serializers.ValidationError("payment price doesen't match")
+                raise serializers.ValidationError("payment price doesen't match")   
             with transaction.atomic():
                 Enrollment.objects.create(skill=skill, child_profile=child_profile)
         with transaction.atomic():
             Enrollment.objects.create(skill=skill, child_profile=child_profile)
         return validated_data
-            
+
+class EnrollmentReadSerializer(serializers.ModelSerializer):
+    skill = SkillReadSerializer(read_only=True)
+    child_profile = ChildReadSerializer(read_only=True)
+    class Meta:
+        model = Enrollment
+        fields = [
+            "child_profile", "skill",
+            "is_active", "created_at",
+            "enrol_id"
+        ]

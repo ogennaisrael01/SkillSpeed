@@ -15,23 +15,24 @@ User = get_user_model()
 class CustomObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
-        data = super().validate(attrs)
-
         password = attrs.get("password")
         email = _validate_email(attrs["email"])
-        valid_email = email["valid_email"] if email.get("succes") else None
+        valid_email = email["valid_email"] if email.get("success") else None
+        if valid_email is None:
+            raise serializers.ValidationError(_("email returned none when verifing email address"))
         try:
             user = User.objects.get(email=valid_email) 
         except User.DoesNotExist:
-            raise AuthenticationFailed(code="invalid_credentials", detail={"status": "Failed"})
+            raise AuthenticationFailed(code="invalid_credentials", detail={"status": "Failed", "message": f"account not found for user {valid_email}"})
         if not user_can_authenticate(user=user):
-            raise AuthenticationFailed(code="invalid_request", detail={"status": "Failed", "detail": "account not verified"})
+            raise AuthenticationFailed(code="invalid_request", detail={"status": "Failed", "detail": _("account not verified")})
         if not user.check_password(password):
-            raise AuthenticationFailed(code="invalid_credentails", detail={"status": "failed", "detail": "invalid_credentials"})
+            raise AuthenticationFailed(code="invalid_credentails", detail={"status": "failed", "detail": _("invalid_credentials")})
         self.user = user
+        data = super().validate(attrs)
         data.update({"user_data": {
             "user_id": user.pk, "email": user.email,
-            "name": user.get_full_name_or_none() if user.get_full_name_or_none() else None
+            "name": user.get_full_name_or_none() or ""
         }})
         return data
     

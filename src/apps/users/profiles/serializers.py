@@ -8,12 +8,13 @@ from django.shortcuts import get_object_or_404
 
 from .helpers import create_guadian_profile, create_instructor_profile
 from .models import ChildProfile, ChildInterest, Guardian, Instructor, Certificates
+from ..serializers import UserReadSerializer
 
 import datetime
 User = get_user_model()
 
 class OnboardSerializer(serializers.Serializer):
-    required_roles = User.UserRoles.choices
+    required_roles = User.UserRoles
 
     role = serializers.ChoiceField(choices=required_roles, write_only=True, required=True)
     profile_completed  = serializers.BooleanField(required=True)
@@ -42,8 +43,8 @@ class OnboardSerializer(serializers.Serializer):
             raise serializers.ValidationError(_("user already has an active role"), code="user_role_active")
         if profile_completed:
             with transaction.atomic():
-                user.role = role
-                user.save(update_fields=['role'])
+                user.user_role = role
+                user.save(update_fields=['user_role'])
                 if role == User.UserRoles.GUARDIAN:
                     create_guadian_profile(user=user)
                 elif role == User.UserRoles.INSTRUCTOR:
@@ -113,7 +114,7 @@ class ChildProfileCreateSerializer(serializers.ModelSerializer):
         return value
     
     def validate_gender(self, value):
-        required_genders = ChildProfile.GenderChoices.choices
+        required_genders = ChildProfile.GenderChoices
         if value is None:
             self.fail("gender_required")
         if value.upper() not in required_genders:
@@ -131,11 +132,11 @@ class ChildProfileCreateSerializer(serializers.ModelSerializer):
         user_role = getattr(user, "user_role") if user and hasattr(user, "user_role") else None
         if user_role is None:
             raise serializers.ValidationError(_("Please onboard before you continue"), code="invalid_request")
-        if user_role != User.UserRole.GUARDIAN:
+        if user_role != User.UserRoles.GUARDIAN:
             raise serializers.ValidationError(_("Invalid role"), code="invalid_request")
-        fields = ("fiest_name", "last_name", "middle_name")
+        fields = ("first_name", "last_name", "middle_name")
         for key in fields:
-            validated_data[key] = validated_data[key].upper() if validated_data[key] else None
+            validated_data[key] = validated_data[key].title() if validated_data[key] else None
         
         with transaction.atomic():
             ChildProfile.objects.create(guardian=user, **validated_data)
@@ -155,7 +156,7 @@ class ChildReadSerializer(serializers.ModelSerializer):
             "interests", "guardian"
         ]
 
-    def get_guadian(self, obj):
+    def get_guardian(self, obj):
         if not isinstance(obj, ChildProfile):
             return None
         return {
@@ -165,7 +166,8 @@ class ChildReadSerializer(serializers.ModelSerializer):
         }
 
 class GuardianProfileSerializer(serializers.ModelSerializer):
-    children = ChildReadSerializer(many=True, read_only=True)
+    children = serializers.SerializerMethodField()
+    user = UserReadSerializer(read_only=True)
     class Meta:
         model = Guardian
         fields = [
@@ -177,6 +179,15 @@ class GuardianProfileSerializer(serializers.ModelSerializer):
             "guardian_id", "created_at", 
             "user", "is_active", "children"
         ]
+
+    def get_children(self, obj):
+        user = getattr(obj, "user")
+        if user is None:
+            return []
+        children = obj.user.children.all()
+        serializer = ChildReadSerializer(children, many=True)
+        return serializer.data
+    
 
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
@@ -255,7 +266,7 @@ class InstructorSerializer(serializers.ModelSerializer):
         return validated_data
 
 class RoleSwitchSerializer(serializers.Serializer):
-    allowed_roles = getattr(User.ActiveProfile, "choices")
+    allowed_roles = getattr(User, "ActiveProfile")
     role = serializers.ChoiceField(choices=allowed_roles, write_only=True)
 
     default_error_messages = {

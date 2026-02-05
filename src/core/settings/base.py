@@ -28,6 +28,10 @@ OTP_LIFE = env("OTP_LIFE", default=10)  # in minutes
 BASE_URL = env("BASE_URL", default="http://localhost:8000/")
 APP_NAME = env("APP_NAME", default="SkillSpeed")
 
+CHAPA_SECRET_KEY=env("CHAPA_SECRET_KEY", None)
+CHAPA_INIT_URL=env("CHAPA_INIT_URL", None)
+CHAPA_VERIFY_URL=env("CHAPA_INIT_URL", None)
+
 # Application definitionS
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -38,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     "social_django",
+    "rest_framework_simplejwt",
     "drf_yasg",
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
@@ -76,16 +81,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUHTENTICATION_CLASSES": {
-        "rest_framework_simplejwt.authentication.JWTAuthentication"
-    },
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny"
     ]
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timezone.timedelta(minutes=5),
+    "ACCESS_TOKEN_LIFETIME": timezone.timedelta(minutes=40),
     "REFRESH_TOKEN_LIFETIME": timezone.timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
@@ -96,10 +101,10 @@ SIMPLE_JWT = {
 }
 
 AUTHENTICATION_BACKENDS = (
-    "social_core.backends.github.GithubOAuth2",
-    "social_core.backends.google.GoogleOAuth2",
+    # "social_core.backends.github.GithubOAuth2",
+    # "social_core.backends.google.GoogleOAuth2",
     # "social_core.backends.facebook.FacebookOAuth2",
-    "apps.users.backends.CustomBackend"
+    "apps.users.backends.CustomBackend",
 )
 
 

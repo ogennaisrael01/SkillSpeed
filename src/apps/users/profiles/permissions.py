@@ -22,7 +22,7 @@ class IsGuardian(BasePermission):
     def has_object_permission(self, request, view, obj):
         if hasattr(request, "user"):
             user = request.user
-            if not user.is_autheticated:
+            if not user.is_authenticated:
                 return False
             if obj.user == user and user.user_role == User.UserRoles.GUARDIAN: 
                 return True  
@@ -47,7 +47,7 @@ class IsOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
         if hasattr(request, "user"):
             user = request.user
-            if not user.is_autheticated:
+            if not user.is_authenticated:
                 return False
             return obj.user == user
         return False
@@ -56,7 +56,7 @@ class ChildProfileOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
         if hasattr(request, "user"):
             user = request.user
-            if not user.is_autheticated:
+            if not user.is_authenticated:
                 return False
             return getattr(obj.guardian, "user") == getattr(request, "user")
         return False
@@ -65,16 +65,16 @@ class ChildRole(BasePermission):
     def has_permission(self, request, view):
         if hasattr(request, "user"):
             user = request.user
-            if not user.is_autheticated:
+            if not user.is_authenticated:
                 return False
-            if user.active_role == User.ActiveProfile.CHILD:
+            if user.active_profile == User.ActiveProfile.CHILD:
                 return True
         return False
 
 class IsInterestOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
         user = request.user
-        if not user.is_autheticated:
+        if not user.is_authenticated:
             return False
         if obj.child.guardian != user:
             return False

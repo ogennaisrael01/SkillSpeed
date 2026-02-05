@@ -14,8 +14,9 @@ from django.db.models import Q
 from django.contrib.auth import get_user_model
 
 from .serializers import (CategorySerializer, SkillCreateSerializer, 
-                          SkillReadSerializer, EnrollmentSerializer)
-from .models import SkillCategory, Skills, ChildProfile
+                        SkillReadSerializer, EnrollmentSerializer,
+                        EnrollmentReadSerializer)
+from .models import SkillCategory, Skills, ChildProfile, Enrollment
 from ..users.profiles.permissions import IsInstructor, IsOwner, IsGuardian
 from ..users.helpers import _validate_serializer
 from .paginations import CustomSkillPagination
@@ -37,15 +38,11 @@ class SkillSearchView(ListAPIView):
     @method_decorator(cache_page(60 * 15))
     def get(self, request, *args, **kwargs):
         if "search" not in request.query_params:
-            return Response({"status": "failed", "message": "You cannot search with a search filter"}, status=status.HTTP_200_OK)
+            return Response({"status": "failed", "message": "You cannot search without a search filter"}, status=status.HTTP_200_OK)
         qs = self.get_queryset()
         if qs:
             query = request.query_params.get("search")
-            if isinstance(query, int):
-                qs = qs.filter(Q(min_age__gte=query) |
-                               Q(max_age__lte=query) |
-                               Q(price=query))
-            elif isinstance(query, str): 
+            if isinstance(query, str): 
                 qs = qs.filter(Q(category__name__icontains=query) |
                                Q(name__icontains=query)) 
             page = self.paginate_queryset(qs)
@@ -131,8 +128,19 @@ class SkillsViewSet(viewsets.ModelViewSet):
                          status=status.HTTP_201_CREATED)
     
 class EnrollmentViewSet(ListCreateAPIView):
-    serializer_class = EnrollmentSerializer
-    permission_classes = [IsGuardian]
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Enrollment.objects.select_related("child_profile", "skill")
+    pagination_class = CustomSkillPagination
+
+    def get_queryset(self):
+        child_pk = self.kwargs.get("child_pk")
+        qs = self.filter_queryset(self.queryset)
+        if qs is None:
+            return Response({"status": "failed", "message": "No query set found for your request"}, 
+                            status=status.HTTP_404_NOT_FOUND)
+
+        filtered_qs = qs.filter(child_profile__pk=child_pk, is_active=True)
+        return filtered_qs
 
     def check_object_permissions(self, request, obj):
         if request.user.active_profile != getattr(User.ActiveProfile, "CHILD"):
@@ -147,11 +155,23 @@ class EnrollmentViewSet(ListCreateAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
         child_profile = get_object_or_404(ChildProfile, pk=child_pk, is_active=True)
         skill = get_object_or_404(Skills, pk=skill_pk, is_active=True)
-        serializer = self.get_serializer(data=request.data, context={"request": request, "profile": child_profile, "skill": skill})
+        serializer = EnrollmentSerializer(data=request.data, context={"request": request, "profile": child_profile, "skill": skill})
         valid_serializer = _validate_serializer(serializer)
         self.perform_create(valid_serializer)
-        return Response({"status": "success", "detail": "enrollment successfull"}, status=status.HTTP_201_CREATED)
+        return Response({"status": "success", "detail": "enrollment successfull",
+                        "data": {"skill_name": skill.name}}, 
+                        status=status.HTTP_201_CREATED)
     
     def list(self, request, *args, **kwargs):
-        "work in listing loged in child enrollments"
-        return super().list(request, *args, **kwargs)
+        qs = self.get_queryset()
+        if "search" in request.query_params:
+            query_param = request.query_params.get("search")
+        if query_param is not None:
+            qs = qs.filter(skill__name__icontains=query_param, is_active=True)
+        page = self.paginate_queryset(queryset=qs)
+        if page is not None:
+            serializer = EnrollmentReadSerializer(page, many=True)
+            return self.get_paginated_response(data=serializer.data)
+        serializer = EnrollmentReadSerializer(qs, many=True)
+        return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+    

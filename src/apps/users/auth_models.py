@@ -104,6 +104,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             self.is_staff
         )
     
+    def __str__(self):
+        return  "CustomUser({}, {})".format(self.email, self.is_active)
+    
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["email"], name="unique_email")
