@@ -6,6 +6,7 @@ from django.utils.decorators import method_decorator
 
 from ..helpers import _child_age_or_none, _is_age_appropriate
 from .models import Purchase
+from .helpers import get_pay_by_tx_ref_or_none, is_payment_pending
 
 import secrets
 
@@ -43,7 +44,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
         skill = self.context.get("skill")
         request = self.context.get('request')
         if Purchase.objects.filter(skill=skill, purchased_by=request.user, 
-                                   purchased_for=child_profile, payment_status=Purchase.PurchaseStatus.COMPLETED).exists():
+                                   purchased_for=child_profile, purchase_status=Purchase.PurchaseStatus.COMPLETED).exists():
             raise serializers.ValidationError(
                 _("This skill has already been purchased for this child profile."),
                 code="already_purchased"
@@ -81,6 +82,22 @@ class PurchaseSerializer(serializers.ModelSerializer):
                                 )
         return purchase
         
+class PurchaseVerifySerializer(serializers.Serializer):
+
+    default_error_messages = {
+        "pay_not_found": _("Payment with the provided transaction reference was not found for the user."),
+        "can_verify_only_pending": _("Only pending payments can be verified."),
+    }
+    def validate(self, attrs):
+        tx_ref = self.context.get("tx_ref")
+        request = self.context.get("request")
+        user = getattr(request, "user")
+        payment = get_pay_by_tx_ref_or_none(tx_ref=tx_ref, user=user)
+        if payment is None:
+            self.fail("pay_not_found")
+        if not is_payment_pending(payment):
+            self.fail("can_verify_only_pending")
+        return attrs
 
 
         

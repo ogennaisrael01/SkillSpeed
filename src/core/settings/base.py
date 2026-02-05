@@ -30,7 +30,7 @@ APP_NAME = env("APP_NAME", default="SkillSpeed")
 
 CHAPA_SECRET_KEY=env("CHAPA_SECRET_KEY", None)
 CHAPA_INIT_URL=env("CHAPA_INIT_URL", None)
-CHAPA_VERIFY_URL=env("CHAPA_INIT_URL", None)
+CHAPA_VERIFY_URL=env("CHAPA_VERIFY_URL", None)
 
 # Application definitionS
 INSTALLED_APPS = [

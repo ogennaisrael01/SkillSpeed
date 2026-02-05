@@ -34,7 +34,7 @@ class Command(BaseCommand):
         skills = list()
         for i in range(nm_of_skills):
             instances = Skills(skill_id=uuid.uuid4(), category=random.choice(skill_category_instances), user=random.choice(instrutors),
-                               name=self.faker.text(max_nb_chars=50), description=self.faker.text(), skill_difficulty=random.choice(difficulty),
+                               name=self.faker.text(max_nb_chars=50), description=self.faker.text(max_nb_chars=100), skill_difficulty=random.choice(difficulty),
                                min_age=random.randint(5, 8), max_age=random.randint(8, 15), price=random.randint(1000, 10000),
                                is_paid=True)
             
