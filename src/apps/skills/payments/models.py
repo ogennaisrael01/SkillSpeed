@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
 
 from ..models import Skills, ChildProfile
 
@@ -20,7 +21,24 @@ class Purchase(models.Model):
     purchased_for = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name="purchases")
     purchase_status = models.CharField(choices=PurchaseStatus.choices, default=PurchaseStatus.PENDING, max_length=20)
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    tx_ref = models.CharField(max_length=200, unique=True, null=False)
 
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at =  models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Purchase {self.purchase_id} - {self.skill} by {self.purchased_by}"
+
+    class Meta:
+        verbose_name = _("Purchase")
+        verbose_name_plural = _("Purchases")
+        ordering = ['-created_at']
+
+        indexes = [
+            models.Index(fields=['purchase_id']),
+            models.Index(fields=['tx_ref']),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['tx_ref'], name='unique_tx_ref_per_purchase')
+        ]
