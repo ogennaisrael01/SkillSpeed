@@ -37,9 +37,9 @@ class SkillSearchView(ListAPIView):
 
     @method_decorator(cache_page(60 * 15))
     def get(self, request, *args, **kwargs):
-        if "search" not in request.query_params:
-            return Response({"status": "failed", "message": "You cannot search without a search filter"}, status=status.HTTP_200_OK)
         qs = self.get_queryset()
+        if "search" not in request.query_params:
+            qs = qs.order_by("-created_at")
         if qs:
             query = request.query_params.get("search")
             if isinstance(query, str): 

@@ -4,7 +4,6 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, Permis
 
 import uuid
 
-
 class UserManager(BaseUserManager):
     def create_user(self, email: str, password: str = None, user_role: str =None, **extra_fields):
         """"""
@@ -53,6 +52,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     # account status
     active_profile = models.CharField(max_length=200, choices=ActiveProfile, default=ActiveProfile.GUARDIAN)
+    active_account = models.OneToOneField("ChildProfile", on_delete=models.SET_NULL, null=True, blank=True, related_name="active_account")
     account_status = models.CharField(max_length=200, 
                                       choices=AccountStatus.choices,
                                         default=AccountStatus.ACTIVE) # active, suspended, deactivated

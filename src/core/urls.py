@@ -9,6 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/v1/auth/", include("apps.users.urls")),
     path("api/v1/jdc/", include("apps.skills.urls")),
+    path("api/v1/jdc/", include("apps.lesson.urls")),
     path("health/", health_check, name="health"),
     path("email/", test_send_email, name="email"),
 ]

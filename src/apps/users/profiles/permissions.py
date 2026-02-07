@@ -37,7 +37,7 @@ class IsAdminOrInstructor(BasePermission):
         user_role = getattr(user, "user_role", None)
         if user_role is None:
             return False
-        if user.is_active:
+        if user.is_superuser or user.is_staff:
             return True
         if user_role == User.UserRoles.INSTRUCTOR:
             return True

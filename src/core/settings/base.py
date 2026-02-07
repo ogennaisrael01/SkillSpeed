@@ -49,6 +49,7 @@ INSTALLED_APPS = [
 
     'apps.users.apps.UsersConfig',
     "apps.skills.apps.SkillsConfig",
+    "apps.lesson.apps.LessonConfig",
 ]
 
 MIDDLEWARE = [
