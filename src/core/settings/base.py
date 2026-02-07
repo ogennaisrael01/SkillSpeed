@@ -28,6 +28,8 @@ OTP_LIFE = env("OTP_LIFE", default=10)  # in minutes
 BASE_URL = env("BASE_URL", default="http://localhost:8000/")
 APP_NAME = env("APP_NAME", default="SkillSpeed")
 
+GEMINI_API_KEY = env("GEMINI_API_KEY")
+
 CHAPA_SECRET_KEY=env("CHAPA_SECRET_KEY", None)
 CHAPA_INIT_URL=env("CHAPA_INIT_URL", None)
 CHAPA_VERIFY_URL=env("CHAPA_VERIFY_URL", None)

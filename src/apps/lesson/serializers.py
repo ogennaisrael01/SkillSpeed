@@ -193,7 +193,7 @@ class SubmissionCreateSerializer(serializers.ModelSerializer):
         try:
             with transaction.atomic():
                 Submission.objects.create(project=project, child_profile=child_profile, **validated_data)
-
+                Progress.objects.update_or_create(lesson_content=project.lesson_content, child_profile=child_profile, is_completed=True)
         except Exception as e:
             raise serializers.ValidationError(_(f"Error creating submissions: {str(e)}"), code="invalid_request")
         return validated_data        

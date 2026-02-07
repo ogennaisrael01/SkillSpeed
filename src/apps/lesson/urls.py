@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .recommendation.urls import recommendation_urlpatterns
 
 
 content_view = views.LessonContentViewSet.as_view({
@@ -59,3 +60,7 @@ urlpatterns = [
     path("projects/<uuid:project_pk>/submissions/<uuid:pk>/feeback/", feedback, name="feedback"),
     path("projects/submissions/", submissions, name="submissions"),
 ]
+
+
+# extend recommendation url 
+urlpatterns.extend(recommendation_urlpatterns)

@@ -27,7 +27,7 @@ def child_in_guardian_account(user: User, child_pk: UUID) -> Tuple[bool, ChildPr
     children = getattr(user, "children", None)
     if children is None:
         raise ValidationError(_("No active child guardian profile for this user"))
-    child_profile = ChildProfile.objects.get(pk=child_pk, is_active=True).first()
+    child_profile = ChildProfile.objects.get(pk=child_pk, is_active=True)
     if child_profile in children.all():
         return True, child_profile
     return False, child_profile

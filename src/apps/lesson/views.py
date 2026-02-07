@@ -21,6 +21,7 @@ from .helpers import (can_access_content, user_current_level, _get_contents_for_
                       get_current_status, create_progress_record, get_content_by_pk, 
                       get_project_by_pk, can_create_content)
 from .paginate import CustomLessonPagination
+from .permissions import CanUpdateSubmission
 
 @api_view(http_method_names=["get"])
 def lesson(request) -> Response:
@@ -185,6 +186,11 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     queryset = Submission.objects.select_related("project", "child_profile")
+    
+    def get_permissions(self):
+        if self.action in ("update", "partial_update", "destroy"):
+            return [CanUpdateSubmission()]
+        return [permissions.IsAuthenticated()]
     
     def get_serializer_class(self):
         if self.request.method == ["get"]:
