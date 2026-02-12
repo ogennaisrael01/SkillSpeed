@@ -8,7 +8,8 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+print(BASE_DIR)
 
 env = environ.Env(MAIL_ENABLED=(bool, False), SMTP_LOGIN=(str, 'DEFAULT'))
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
@@ -27,6 +28,8 @@ OTP_LIFE = env("OTP_LIFE", default=10)  # in minutes
 
 BASE_URL = env("BASE_URL", default="http://localhost:8000/")
 APP_NAME = env("APP_NAME", default="SkillSpeed")
+
+GEMINI_API_KEY = env("GEMINI_API_KEY")
 
 CHAPA_SECRET_KEY=env("CHAPA_SECRET_KEY", None)
 CHAPA_INIT_URL=env("CHAPA_INIT_URL", None)
@@ -49,6 +52,7 @@ INSTALLED_APPS = [
 
     'apps.users.apps.UsersConfig',
     "apps.skills.apps.SkillsConfig",
+    "apps.lesson.apps.LessonConfig",
 ]
 
 MIDDLEWARE = [

@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.serializers import ListSerializer
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from django.db import transaction
 from django.utils.decorators import method_decorator
@@ -24,6 +25,7 @@ from .permissions import (IsGuardian, IsAdminOrInstructor, IsOwner, ChildProfile
                           ChildRole, IsInterestOwner, IsInstructor)
 from .models import Guardian, Instructor, ChildProfile, ChildInterest, Certificates
 from .paginate_profiles import CustomProfilePagination
+from .helpers import child_in_guardian_account
 
 User = get_user_model()
 
@@ -204,4 +206,21 @@ class CertificatedViewSet(viewsets.ModelViewSet):
         self.perform_create(valid_serializer)
         return Response({"status": "success", "detail": "certificate saved"}, 
                         status=status.HTTP_201_CREATED)
+
+class SwithBetweenChildAccountView(APIView):
+    http_method_names = ["patch"]
+    permission_classes = [IsGuardian]
     
+    @method_decorator(transaction.atomic)
+    def patch(self, request, *args, **kwargs):
+        child_pk = kwargs.get("child_pk")
+        status, child_profile = child_in_guardian_account(request.user, child_pk)
+        if not status:
+            raise PermissionDenied("You dont have permission to switch to this child account", code="permission_denied")
+        with transaction.atomic():
+            request.user.active_account = child_profile
+            request.user.save(update_fields=["active_account"])
+        return Response({"status": "success", "data": {"child_id": child_profile.pk,
+            "name": child_profile.first_name + "  " + child_profile.last_name,
+            "guardian": request.user.get_full_name_or_none()
+        }})

@@ -36,6 +36,7 @@ certificate_detail = views.CertificatedViewSet.as_view({
 
 profile_urlpatterns: list[URLResolver] = [
     path("", include(routers.urls)),
+    path("account/<uuid:child_pk>/switch/", views.SwithBetweenChildAccountView.as_view(), name="profile_switch"),
     path("child/<uuid:pk>/profile/", child_profile_management, name="child_profile"),
     path("child/<uuid:child_pk>/interest/", interest_create, name="intrest_create"),
     path("child/<uuid:child_pk>/interest/<uuid:pk>/", interest_detail, name="intrest_detail"),

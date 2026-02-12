@@ -37,12 +37,7 @@ class RegisterViewSet(viewsets.ModelViewSet):
         self.perform_create(valid_serializer)
         return Response({"status": "success", 
                         "detail": _("Registration successfull. verify your account"),
-                        "data": { 
-                            "email": valid_serializer.validated_data.get("email"),
-                            "first_name": valid_serializer.validated_data.get("first_name"),
-                            "last_name": valid_serializer.validated_data.get("last_name")
-                            }
-                        }
+                        }, status=status.HTTP_201_CREATED
                     )
 
 class CodeUrlVerificationViewSet(viewsets.ModelViewSet):
@@ -100,7 +95,6 @@ class OneTimePasswordResendView(APIView):
             user = _get_user_by_email(email)
             code = create_otp_for_user(user)
             context = genrate_context_for_otp(code=code, email=user.email)
-            print(context)
             _send_email_to_user(context=context)
             logger.info("code_resend_request", extra={"email": email})       
         except User.DoesNotExist:
@@ -123,12 +117,12 @@ class PasswordResetViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         valid_serializer = _validate_serializer(serializer)
-        email = valid_serializer.get("email")
-
+        email = valid_serializer.validated_data.get("email")
         try:
             user = _get_user_by_email(email)
             code = create_otp_for_user(user)
-            token = create_password_reset_for_user(user)
+            token = create_password_reset_for_user(user, code=code)
+
             url = _generate_url_for_password_reset(token)
 
             context = generate_context_for_password_reset(code=code, verification_url=url,

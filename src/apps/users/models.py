@@ -15,7 +15,8 @@ class OneTimePassword(models.Model):
     is_used = models.BooleanField(default=False, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
+    raw_code = models.CharField(unique=True, max_length=20)
     hash_code = models.CharField(max_length=200, unique=True)
 
     def __str__(self):
@@ -39,7 +40,7 @@ class PasswordReset(models.Model):
     reset_id = models.UUIDField(primary_key=True, max_length=20, default=uuid.uuid4, unique=True)
     reset_code = models.CharField(max_length=200, null=False, blank=False, db_index=True)
     reset_token = models.URLField(null=True, blank=True, db_index=True)
-
+    raw_code = models.CharField(unique=True, max_length=20, db_index=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reset_codes")
     is_active = models.BooleanField(default=True)
 

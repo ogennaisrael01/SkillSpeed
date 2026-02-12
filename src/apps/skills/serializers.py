@@ -53,7 +53,8 @@ class SkillCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         min_age = attrs.get("min_age")
         max_age = attrs.get("max_age")
-        if any([min_age, max_age ]) is None:
+
+        if min_age is None or max_age is None:
             raise serializers.ValidationError(_("Please provide the age limit for this skill"), code="provide_age")
         if max_age > 15 or min_age < 5:
             raise serializers.ValidationError(_("'min age' cannot be below 5 and 'max_age' cannot be above 15"))
@@ -117,7 +118,6 @@ class EnrollmentSerializer(serializers.Serializer):
         request = self.context.get("request")
         skill = self.context.get("skill")
         child_profile = self.context.get("profile")
-        print(child_profile, skill)
         user = getattr(request, "user")
         if Enrollment.objects.filter(child_profile=child_profile, skill=skill , is_active=True).exists():
             raise serializers.ValidationError(_('you already enrolled for this skill'))

@@ -1,5 +1,5 @@
 from .services.tasks import send_email_on_quene, logger
-from .services.helpers import _hash_otp_code
+from .services.helpers import _hash_otp_code, verify_otp
 from .models import OneTimePassword, PasswordReset
 
 from django.contrib.auth import get_user_model
@@ -86,10 +86,10 @@ def _get_user_by_email(email: str):
         return None
 
 def _get_code(code: str, user):
-    hash_code = _hash_otp_code(code)
     try:
-        one_time_password = OneTimePassword.objects.get(hash_code__iexact=hash_code, user=user)
-        return one_time_password
+        one_time_password = OneTimePassword.objects.get(user=user, raw_code=code, is_active=True)
+        if verify_otp(code, one_time_password.hash_code):
+            return one_time_password
     except OneTimePassword.DoesNotExist:
         return None
     
@@ -134,8 +134,9 @@ def save_user_password(user, password):
 
 def _get_reset_code_or_none(code):
     try:
-        code = PasswordReset.objects.get(reset_code=code.strip(), is_active=True)
-        return code
+        code_instance = PasswordReset.objects.get(raw_code=code, is_active=True)
+        if verify_otp(code, code_instance.reset_code):
+            return code
     except PasswordReset.DoesNotExist:
         return None
 
