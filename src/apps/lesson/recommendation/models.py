@@ -45,7 +45,7 @@ class Recommendation(models.Model):
         verbose_name = "Recommendation"
         verbose_name_plural = "Recommendations"
         constraints = [ # unique constraint to prevent duplicate recommendations for the same child profile based on the same skills
-            models.UniqueConstraint(fields=['child_profile', 'recommenedation_type', 'category', 'difficulty'], name='unique_recommendation_per_child')
+            models.UniqueConstraint(fields=['child_profile', 'recommendation_type', 'category', 'difficulty'], name='unique_recommendation_per_child')
             
         ]
         

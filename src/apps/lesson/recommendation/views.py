@@ -43,7 +43,6 @@ class RecommendationViewSet(viewsets.ModelViewSet):
 
     @method_decorator(cache_page(60 * 15))
     def list(self, request, *args, **kwargs):
-        print(self.get_serializer())
         search = request.query_params.get("search", None)
         queryset = self.filter_queryset(self.get_queryset())
         if search:
@@ -51,7 +50,7 @@ class RecommendationViewSet(viewsets.ModelViewSet):
                                        Q(category__icontains=search) | 
                                        Q(reason__icontains=search) |
                                        Q(difficulty__icontains=search) |
-                                       Q(recommenedation_type__icontains=search) |
+                                       Q(recommendation_type__icontains=search) |
                                         Q(recommended_by__icontains=search)
                                        ).distinct()
         page = self.paginate_queryset(queryset)

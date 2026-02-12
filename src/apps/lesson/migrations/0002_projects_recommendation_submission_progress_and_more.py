@@ -113,7 +113,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='recommendation',
-            constraint=models.UniqueConstraint(fields=('child_profile', 'recommenedation_type', 'category', 'difficulty'), name='unique_recommendation_per_child'),
+            constraint=models.UniqueConstraint(fields=('child_profile', 'recommendation_type', 'category', 'difficulty'), name='unique_recommendation_per_child'),
         ),
         migrations.AddIndex(
             model_name='submission',

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 
-from .drf_ysag import get_swagger_view
+from .drf_yasg import get_swagger_view
 from .service import health_check, test_send_email
 
 urlpatterns = [
@@ -25,3 +25,4 @@ DJANGO_ENV = getattr(settings, "DJANGO_SETTINGS_MODULE")
 if DEBUG and DJANGO_ENV != "core.settings.production":
     from debug_toolbar.toolbar import debug_toolbar_urls
     urlpatterns += debug_toolbar_urls()
+    urlpatterns += [path('silk', include('silk.urls', namespace='silk'))]

@@ -150,7 +150,7 @@ class EnrollmentViewSet(ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         child_pk = kwargs.get("child_pk")
         skill_pk = kwargs.get("skill_pk")
-        if any([child_pk, skill_pk]) is None:
+        if child_pk is None or skill_pk is None:
             return Response({"status": "succcess", "message": "child and skill is required before we continue with enrollment"},
                             status=status.HTTP_400_BAD_REQUEST)
         child_profile = get_object_or_404(ChildProfile, pk=child_pk, is_active=True)

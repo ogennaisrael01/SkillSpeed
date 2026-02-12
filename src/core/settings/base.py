@@ -8,7 +8,8 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+print(BASE_DIR)
 
 env = environ.Env(MAIL_ENABLED=(bool, False), SMTP_LOGIN=(str, 'DEFAULT'))
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))

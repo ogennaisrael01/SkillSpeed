@@ -17,7 +17,7 @@ class Command(BaseCommand):
 
         admin_user = self.User.objects.filter(is_superuser=True).first()
         categories = getattr(SkillCategory.Category, "choices")
-        if any([admin_user, categories]) is None:
+        if admin_user is None or categories is None:
             self.stdout.write(self.style.WARNING("admin user and categories are required to populate skills"))
 
         for category in categories:

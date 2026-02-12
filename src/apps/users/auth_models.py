@@ -116,3 +116,4 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             models.Index(fields=["email"], name="email_idx"),
             models.Index(fields=["created_at"], name="time_idx"),
         ]
+        app_label = "users"
