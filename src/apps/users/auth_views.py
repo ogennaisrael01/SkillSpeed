@@ -3,6 +3,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import status
 
 from .auth import CustomObtainPairSerializer, CustomLogoutSerializer
 from .helpers import _validate_serializer
@@ -20,12 +21,7 @@ class CustomLogoutView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={"request": request})
         valid_serializer = _validate_serializer(serializer)
-        validated_data = valid_serializer.validated_data
-        token = RefreshToken(validated_data.get("refresh_token"))
-        if token.get("user_id") != request.user.pk:
-            return Response({"status": "Failed", "message": "invalid refresh token"}, status=400)
-        token.blacklist()
-        return Response(status=200)
+        return Response({"status": "success", "detail": "Logged Out Successfully"} ,status=status.HTTP_200_OK)
     
 custom_logout_view = CustomLogoutView.as_view()
 

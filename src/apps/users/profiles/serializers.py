@@ -43,15 +43,16 @@ class OnboardSerializer(serializers.Serializer):
             raise serializers.ValidationError(_("user already has an active role"), code="user_role_active")
         if profile_completed:
             with transaction.atomic():
-                user.user_role = role
-                user.save(update_fields=['user_role'])
                 if role == User.UserRoles.GUARDIAN:
                     create_guadian_profile(user=user)
+                    setattr(user, "user_role", User.UserRoles.GUARDIAN)
                 elif role == User.UserRoles.INSTRUCTOR:
                     create_instructor_profile(user=user)
+                    setattr(user, "user_role", User.UserRoles.INSTRUCTOR)
                 else:
                     raise serializers.ValidationError(_("role not allowed"), code="invalid_role")
-        return validated_data
+                user.save(update_fields=["user_role"])
+            return validated_data
 
 class InterestSerializer(serializers.ModelSerializer):
 
@@ -193,7 +194,6 @@ class GuardianProfileSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
     
 class CertificateSerializer(serializers.ModelSerializer):
-
     default_error_messages = {
         "invalid_date": _("Date object is invalid"),
         "date_in_future": _("Date cannot be in the future"),
@@ -202,7 +202,7 @@ class CertificateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Certificates
         fields = [
-            "name", "issued_by",
+            "name", 
             "issued_on", "description",
             "image", "is_active", 
             "created_at", "certificate_id"
@@ -230,7 +230,8 @@ class CertificateSerializer(serializers.ModelSerializer):
         return attrs
     
 class InstructorSerializer(serializers.ModelSerializer):
-    certificates = CertificateSerializer(required=True)
+    certificates = CertificateSerializer(read_only=True, many=True)
+    user = UserReadSerializer(read_only=True)
 
     default_error_messages = {
         "user_invalid": _("Authentication credentials were not provided")
@@ -238,6 +239,7 @@ class InstructorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
         fields = [
+            "instructor_id", "user",
             "display_name", "certificates"
         ]
     

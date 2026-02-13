@@ -26,7 +26,7 @@ def create_instructor_profile(user: User):
 def child_in_guardian_account(user: User, child_pk: UUID) -> Tuple[bool, ChildProfile]:
     children = getattr(user, "children", None)
     if children is None:
-        raise ValidationError(_("No active child guardian profile for this user"))
+        raise ValidationError(_("No active children profile for this user"))
     child_profile = ChildProfile.objects.get(pk=child_pk, is_active=True)
     if child_profile in children.all():
         return True, child_profile

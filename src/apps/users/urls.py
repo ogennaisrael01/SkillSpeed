@@ -13,10 +13,10 @@ routers.register(r"password/reset", views.PasswordResetViewSet, basename="passwo
 
 
 urlpatterns = [
-    path("", include(routers.urls)),
-    path("code/resend/", views.OneTimePasswordResendView.as_view(), name="code_resend"),
-    path("token/obtain/", token_obtain_view, name="login"),
-    path("logout/", custom_logout_view, name="logout")
+    path("auth/", include(routers.urls)),
+    path("auth/code/resend/", views.OneTimePasswordResendView.as_view(), name="code_resend"),
+    path("auth/token/obtain/", token_obtain_view, name="login"),
+    path("auth/logout/", custom_logout_view, name="logout")
 ]
 
 # extends profile urls

@@ -136,7 +136,7 @@ def _get_reset_code_or_none(code):
     try:
         code_instance = PasswordReset.objects.get(raw_code=code, is_active=True)
         if verify_otp(code, code_instance.reset_code):
-            return code
+            return code_instance
     except PasswordReset.DoesNotExist:
         return None
 

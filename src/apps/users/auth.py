@@ -52,7 +52,7 @@ class CustomLogoutSerializer(serializers.Serializer):
         "bad_token": _("Token is invalid or expired")
     }
 
-    def get_user_from_token(token: str):
+    def get_user_from_token(self, token: str):
         token = RefreshToken(token=token)
         return token.get("user_id")
     
@@ -60,14 +60,15 @@ class CustomLogoutSerializer(serializers.Serializer):
         data = super().validate(attrs)
         request = self.context.get("request")
         user = request.user 
-        if user is None or "Anonymous": 
-            raise serializers.ValidationError(_("Authentication credentials were not provided"), code="invali_request")
+        # if user is None or "Anonymous": 
+        #     raise serializers.ValidationError(_("Authentication credentials were not provided"), code="invali_request")
         token = attrs.get("refresh_token")
         user_id = self.get_user_from_token(token)
-        if user_id != user.pk:
+        if str(user_id) != str(user.pk):
             raise serializers.ValidationError(_("Invalid Request. refresh token is Invalid"), code="refresh_token_invalid")
+         
+        outstanding_tokens = OutstandingToken.objects.filter(user=user).all()
         with transaction.atomic():
-            outstanding_tokens = OutstandingToken.objects.filter(user=user).all()
             # black list all outstanding token for this user
             BlacklistedToken.objects.bulk_create(
                 BlacklistedToken(token=token) for token in outstanding_tokens
