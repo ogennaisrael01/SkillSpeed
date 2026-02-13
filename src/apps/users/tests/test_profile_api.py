@@ -49,7 +49,7 @@ class TestUsers:
         public_path = f"/api/v1/profile/{user_id}/"
         response = instructor_client.get(path=public_path)
         result = response.json()
-        print("instructor test", result)
+        # print("instructor test", result)
         assert user_id == result['detail']['guardian_id']
         assert response.status_code == status.HTTP_200_OK
 
@@ -65,7 +65,7 @@ class TestUsers:
         public_path = f"/api/v1/profile/{user_id}/"
         response = guardian_client.get(path=public_path)
         result = response.json()
-        print("guardian test", result)
+        # print("guardian test", result)
         assert user_id == result['detail']['instructor_id']
         assert response.status_code == status.HTTP_200_OK
 

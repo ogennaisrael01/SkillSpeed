@@ -44,7 +44,8 @@ class ProfileManagementViewsets(viewsets.ModelViewSet):
                             .filter(pk=pk, is_deleted=False, is_active=True)
             if queryset is None:
                 return Response({"status": "failed", "detail": "No profile is associated to this account"}, \
-                                status=status.HTTP_404_NOT_FOUND)                  
+                                status=status.HTTP_404_NOT_FOUND)    
+        print(queryset)              
         super_user = getattr(self.request.user, "is_superuser")
         if super_user:
             queryset = Guardian.objects.select_related("user") or \
@@ -83,6 +84,7 @@ class ProfileManagementViewsets(viewsets.ModelViewSet):
                             status=status.HTTP_404_NOT_FOUND)
 
         user_role = getattr(profile.user, "user_role")
+        print(user_role)
         if user_role == User.UserRoles.GUARDIAN:
             serializer = GuardianProfileSerializer(profile)
             return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
