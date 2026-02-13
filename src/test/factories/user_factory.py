@@ -4,6 +4,7 @@ from django.utils import timezone
 from apps.users.models import OneTimePassword, PasswordReset
 from apps.users.helpers import _hash_otp_code
 from test.helpers import password_reset_token
+from apps.users.profiles.models import Guardian, Instructor
 
 import factory
 
@@ -35,3 +36,14 @@ class PasswordResetFactory(factory.django.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
     raw_code = otp_code
     
+class GuardianFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Guardian
+    user = factory.SubFactory(UserFactory)
+    display_name = factory.LazyAttribute(lambda guardian: f"{guardian.user.first_name} {guardian.user.last_name}")
+
+class InstructorFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Instructor
+    user = factory.SubFactory(UserFactory)
+    display_name  = factory.LazyAttribute(lambda instructor: f"{instructor.user.first_name} {instructor.user.last_name}")

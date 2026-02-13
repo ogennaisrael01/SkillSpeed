@@ -7,13 +7,14 @@ from ..models import OneTimePassword, PasswordReset
 
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 
 import pytest
 from uuid import UUID
-from django.core import mail
 
+@pytest.mark.api
 @pytest.mark.django_db
-class TestUsers:
+class TestAuth:
     def test_registrations(self, api_client: APIClient, setup_celery_test_config):
         registration_path = "/api/v1/auth/register/"
         request_data = {
@@ -82,8 +83,8 @@ class TestUsers:
 
     def test_password_reset_confirm_code(self, api_client: APIClient, user, password_reset):
         confirm_path = "/api/v1/auth/password/reset/confirm/"
-        print(PasswordReset.objects.all())
-        password = PasswordReset.objects.get(user=user, is_active=True)
+        password_reset.user = user
+        password = PasswordReset.objects.get(user__email=user.email, is_active=True)
         request_data = {
             "code": password.raw_code,
             "password": "secure_password30",
@@ -91,6 +92,16 @@ class TestUsers:
         }
         response = api_client.post(path=confirm_path, data=request_data)
         result = response.json()
-        print(result)
         assert response.status_code == status.HTTP_200_OK
         assert result["status"] == "success"
+
+    def test_logout(self, authenticated_client, user):
+        logout_path = "/api/v1/auth/logout/"
+        token = RefreshToken.for_user(user)
+        request_data = {
+            "refresh_token": str(token)
+        }
+        response = authenticated_client.post(path=logout_path, data=request_data)
+        result = response.json()
+        assert result["status"] == "success"
+        assert response.status_code == status.HTTP_200_OK
