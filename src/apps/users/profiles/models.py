@@ -102,7 +102,7 @@ class ChildInterest(models.Model):
 class Instructor(models.Model):
     instructor_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4, db_index=True)
 
-    display_name = models.CharField(max_length=200)
+    display_name = models.CharField(max_length=200, blank=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
 
     is_active = models.BooleanField(default=True, db_index=True)
@@ -131,5 +131,9 @@ class Certificates(models.Model):
 
     class Meta:
         verbose_name = _("Certificate")
+
+        constraints = [
+            models.UniqueConstraint(fields=["user", "name"], name="unique_name_and_user")
+        ]
 
 

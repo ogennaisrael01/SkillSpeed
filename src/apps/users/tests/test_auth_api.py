@@ -1,4 +1,4 @@
-from test.fixtures_config import (api_client, 
+from tests_config.fixtures.fixtures_config import (api_client, 
                                 authenticated_client, 
                                 user, otp_code, password_reset,
                                 user_verification, setup_celery_test_config

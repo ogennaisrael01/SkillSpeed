@@ -1,3 +1,4 @@
+
 from typing import NoReturn
 
 from rest_framework import viewsets, status, permissions
@@ -5,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.serializers import ListSerializer
 from rest_framework.response import Response
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.views import APIView
 
 from django.db import transaction
@@ -29,32 +30,42 @@ from .helpers import child_in_guardian_account
 User = get_user_model()
 
 class ProfileManagementViewsets(viewsets.ModelViewSet):
-    http_method_names: list[str] = ["patch", "post", "get"]
+    http_method_names: list[str] = ["patch", "get", "post"]
     pagination_class = CustomProfilePagination
 
     def get_queryset(self):
         pk = self.kwargs.get("pk")
         queryset = None
         if pk:
-            queryset = Guardian.objects.select_for_update("user")\
+            guardian_queryset = Guardian.objects.select_for_update("user")\
                 .filter(pk=pk, is_active=True, is_deleted=False)
-            if queryset is None:
-                queryset = Instructor.objects.select_related("user")\
+            if guardian_queryset:
+                return guardian_queryset
+            
+            else:
+                instructor_queryset = Instructor.objects.select_related("user")\
                             .prefetch_related("certificates")\
-                            .filter(pk=pk, is_deleted=False, is_active=True)
-            if queryset is None:
+                            .filter(pk=pk, is_active=True)
+                if instructor_queryset:
+                    return instructor_queryset
+            
+            if instructor_queryset is None or guardian_queryset is None:
                 return Response({"status": "failed", "detail": "No profile is associated to this account"}, \
                                 status=status.HTTP_404_NOT_FOUND)    
-        print(queryset)              
+
         super_user = getattr(self.request.user, "is_superuser")
-        if super_user:
-            queryset = Guardian.objects.select_related("user") or \
-            Instructor.objects.select_related("user").prefetch_related("certificates")
-        return queryset
+        if super_user or self.reqeust.user.user_role == User.UserRoles.INSTRUCTOR:
+            guardian = Guardian.objects.select_related("user").filter(is_active=True)
+            instructor = Instructor.objects.select_related("user") \
+                                .prefetch_related("certificates")\
+                                .filter(is_active=True)
+            
+            return guardian, instructor
+        return None
     
 
     def get_serializer_class(self):
-        if self.action in ("create", "partial_update", "user_profile_update"):
+        if self.action in ("create", "partial_update"):
             user_role = getattr(self.request.user, "user_role", None)
             if user_role is None:
                 raise ValidationError("Account Invalid", code="invalid_profile")
@@ -66,31 +77,40 @@ class ProfileManagementViewsets(viewsets.ModelViewSet):
         
     @method_decorator(cache_page(60 * 15))
     def list(self, request, *args, **kwargs):
-        qs = self.filter_queryset(self.get_queryset())
-        if qs is None:
-            qs = qs.none()
-        else:
-            qs = qs.all()
-        page = self.paginate_queryset(qs)
-        if page is not None:
-            return self.get_paginated_response(qs)
-        return Response(qs, status=status.HTTP_200_OK)
+        queryset  = self.filter_queryset(self.get_queryset())
+        if not isinstance(queryset, tuple):
+            return Response({"status": "failed", "message": "queryset did not return appropriate data for retrieving user profiles"},\
+                            status=status.HTTP_400_BAD_REQUEST)
+        guardian, instructor = queryset
+        guardian_paginator = self.paginate_queryset(guardian)
+        instructor_paginator = self.paginate_queryset(instructor)
+        if  guardian_paginator is not None and instructor_paginator is not None:
+            guardian_serializer = GuardianProfileSerializer(guardian_paginator, many=True)
+            instructor_serialzer = InstructorSerializer(instructor_paginator, many=True)
+            return Response({"status": "success", "guardian_data": guardian_serializer.data,\
+                             "instructor_data": instructor_serialzer.data}, \
+                                status=status.HTTP_200_OK)
+        
+        guardian_serializer = GuardianProfileSerializer(guardian, many=True)
+        instructor_serialzer = InstructorSerializer(instructor, many=True)
     
+        return Response({"status": "success", "guardian_data": guardian_serializer.data,\
+                             "instructor_data": instructor_serialzer.data}, \
+                                status=status.HTTP_200_OK)
+        
     def retrieve(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         profile = queryset.first()
         if profile is None:
             return Response({"status": "failed", "detail": "No query found"},\
                             status=status.HTTP_404_NOT_FOUND)
-
         user_role = getattr(profile.user, "user_role")
-        print(user_role)
         if user_role == User.UserRoles.GUARDIAN:
             serializer = GuardianProfileSerializer(profile)
-            return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+            return Response({"status": "success", "detail": serializer.data}, status=status.HTTP_200_OK)
         elif user_role == User.UserRoles.INSTRUCTOR:
             serializer = InstructorSerializer(profile)
-            return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+            return Response({"status": "success", "detail": serializer.data}, status=status.HTTP_200_OK)
         return Response({"status": "failed", "messagae": "invalid profile"}, status=status.HTTP_400_BAD_REQUEST)
     
     def get_permissions(self):
@@ -103,20 +123,7 @@ class ProfileManagementViewsets(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
     
     @method_decorator(transaction.atomic)
-    def partial_update(self, request, *args, **kwargs) -> Response:
-        return super().partial_update(request, *args, **kwargs)
-    
-    @method_decorator(transaction.atomic)
-    @action(methods=["patch"], detail=False, url_path="patch")
-    def user_profile_update(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data, context={"request": request})
-        valid_serialzer = _validate_serializer(serializer=serializer)
-        headers = self.get_success_headers(valid_serialzer.validated_data)
-        valid_serialzer.save()
-        return Response({"status": "success", "detail": valid_serializer.validated_data}, status=status.HTTP_200_OK, headers=headers)
-    
-    @method_decorator(transaction.atomic)
-    @action(methods=["patch"], detail=False, url_path="onboard")
+    @action(methods=["post"], detail=False, url_path="onboard")
     def onboard(self, request, *args, **kwargs) -> Response:
         serializer = OnboardSerializer(data=request.data, context={'request': request})
         valid_serializer: ListSerializer | transaction.Any | OnboardSerializer = _validate_serializer(serializer=serializer)
@@ -127,10 +134,10 @@ class ProfileManagementViewsets(viewsets.ModelViewSet):
     @action(methods=["post"], detail=False, url_path="child/onboard")
     def child_onboard(self, request, *args, **kwargs) -> Response:
         serializer = ChildProfileCreateSerializer(data=request.data, context={"request": request})
-        valid_serializer: ListSerializer | transaction.Any | ChildProfileCreateSerializer =  _validate_serializer(serializer=serializer)
+        valid_serializer =  _validate_serializer(serializer=serializer)
     
         self.perform_create(serializer)
-        return Response({"status": "success", "deatil": valid_serializer.validated_data}, status=status.HTTP_201_CREATED)
+        return Response({"status": "success", "detail": valid_serializer.validated_data}, status=status.HTTP_201_CREATED)
     
 
     @method_decorator(transaction.atomic)
@@ -142,10 +149,29 @@ class ProfileManagementViewsets(viewsets.ModelViewSet):
         return Response({"status": "success", "detail": {"user": request.user.email, "active_role": request.user.active_profile}}, 
                         status=status.HTTP_200_OK)
 
-
-
-class ProfileRetrieveAPIView(RetrieveAPIView):
+class ProfileRetrieveAPIView(RetrieveUpdateAPIView):
     permission_classes = [IsOwner]
+
+    def get_object(self):
+        user = self.request.user
+        user_role = getattr(user, "user_role", None)
+        if user_role == User.UserRoles.GUARDIAN:
+            try:
+                obj = Guardian.objects.get(user=user, is_active=True)
+                self.check_object_permissions(self.request, obj=obj)
+            except Guardian.DoesNotExist:
+                return None
+            return obj
+        elif user_role == User.UserRoles.INSTRUCTOR:
+            try:
+                obj = Instructor.objects.get(user=user, is_active=True)
+                self.check_object_permissions(self.request, obj)
+            except Instructor.DoesNotExist:
+                return None
+            return obj
+        return None
+
+
     def get_queryset(self):
         user = self.request.user
         user_role = getattr(user, "user_role", None)

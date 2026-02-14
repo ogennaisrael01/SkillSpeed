@@ -30,16 +30,11 @@ class IsGuardian(BasePermission):
 class IsAdminOrInstructor(BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        if not hasattr(user, "user_role"):
-            return False
         if not user.is_authenticated:
-            return False
-        user_role = getattr(user, "user_role", None)
-        if user_role is None:
             return False
         if user.is_superuser or user.is_staff:
             return True
-        if user_role == User.UserRoles.INSTRUCTOR:
+        if user.user_role == User.UserRoles.INSTRUCTOR:
             return True
         return False
 
