@@ -15,7 +15,7 @@ import os
 @permission_classes(permission_classes=[permissions.IsAuthenticated])
 def health_check(request: HttpRequest) -> Response:
     """ A simple api view for project health check """
-    return Response(data={"status": "succes", "detail": {"users": "/api/v1/auth/"}})
+    return Response(data={"status": "succes", "detail": {"users": "/api/v1/auth/","skills": "/api/v1/skills/", "lessons": "/api/v1/lessons/"}})
 
 @permission_classes(permission_classes=[permissions.IsAuthenticated])
 @api_view(http_method_names=["get"])
