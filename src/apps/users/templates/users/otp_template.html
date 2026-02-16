@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ app_name }} | Verification Code</title>
+</head>
+<body style="margin:0; padding:0; background-color:#121212; font-family:Arial, Helvetica, sans-serif;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#121212; padding:20px 0;">
+    <tr>
+        <td align="center">
+
+            <table width="600" cellpadding="0" cellspacing="0"
+                   style="background-color:#1e1e1e; border-radius:8px; overflow:hidden;">
+
+                <!-- Header -->
+                <tr>
+                    <td style="background-color:#000000; padding:24px; text-align:center;">
+                        <h2 style="margin:0; color:#ffffff; font-weight:normal;">
+                            {{ app_name }}
+                        </h2>
+                    </td>
+                </tr>
+                <!-- Preheader (hidden) -->
+                <tr>
+                    <td style="padding:0 24px 12px 24px; text-align:center;">
+                        <div style="display:none; max-height:0; max-width:0; overflow:hidden; font-size:1px; line-height:1px; color:#121212; opacity:0;">
+				{{ preheader|default:"Use this code to verify your account on "|add:app_name|add:"." }}
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Hero / Intro -->
+                <tr>
+                    <td style="padding:20px 24px 8px 24px; text-align:center; background:linear-gradient(180deg,#1a1a1a 0%, #151515 100%);">
+                        <h3 style="margin:0; color:#ffffff; font-weight:600; font-size:18px;">
+                            Verification Code
+                        </h3>
+                        <p style="margin:8px 0 0; color:#bfbfbf; font-size:13px;">
+                            Securely verify your <strong style="color:#ffffff;">{{ app_name }}</strong> account
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Divider -->
+                <tr>
+                    <td style="padding:12px 24px;">
+                        <hr style="border:none; height:1px; background-color:#2c2c2c; margin:0;">
+                    </td>
+                </tr>
+                <!-- Body -->
+                <tr>
+                    <td style="padding:24px; color:#d1d1d1; font-size:14px; line-height:1.6;">
+
+                        <p style="margin-top:0;">
+                            Hello {{ email }},
+                        </p>
+
+                        <p>
+                            Use the verification code below to complete your request on
+                            <strong style="color:#ffffff;">{{ app_name }}</strong>.
+                            This code is valid for a limited time.
+                        </p>
+
+                        <!-- OTP Code -->
+                        <div style="margin:24px 0; text-align:center;">
+                            <span style="
+                                display:inline-block;
+                                padding:14px 24px;
+                                background-color:#2a2a2a;
+                                color:#ffffff;
+                                font-size:24px;
+                                letter-spacing:4px;
+                                border-radius:6px;
+                                font-weight:bold;">
+                                {{ code }}
+                            </span>
+                        </div>
+
+                        <p style="text-align:center; margin-bottom:24px;">
+                            or verify instantly using the button below
+                        </p>
+
+                        <!-- Button -->
+                        <table align="center" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="background-color:#2a2a2a; border-radius:4px;">
+                                    <a href="{{ verification_url }}"
+                                       style="
+                                       display:inline-block;
+                                       padding:12px 20px;
+                                       color:#ffffff;
+                                       text-decoration:none;
+                                       font-size:14px;">
+                                        Verify on {{ app_name }}
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="margin-top:24px;">
+                            If you did not request this action, you can safely ignore this email.
+                        </p>
+
+                        <p style="margin-bottom:0;">
+                            — The {{ app_name }} Team
+                        </p>
+
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color:#000000; padding:16px; text-align:center;
+                               font-size:12px; color:#8a8a8a;">
+                        © {{ year }} {{ app_name }}. All rights reserved.
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
