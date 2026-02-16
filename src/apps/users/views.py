@@ -189,5 +189,3 @@ class PasswordResetViewSet(viewsets.ModelViewSet):
         except Exception as exc:
             logger.exception(f"password_reset_failed: {str(exc)}", extra={"email": user.email})
         return Response({"status": "success", "detail": "password_reset_confirmed"}, status=status.HTTP_200_OK)
-
-
