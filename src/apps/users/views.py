@@ -9,7 +9,7 @@ from .serializers import (UserRegistrationSerializer, User, _,
                           PasswordResetRequestSerializer, PasswordResetCodeSerializer,
                           PasswordResetUrlSerializer)
 from .helpers import (_validate_serializer, _get_user_by_email, _get_code, _verify_account,
-                      _get_one_time_code_or_none, _send_email_to_user, _get_reset_token_or_none,
+                      _send_email_to_user, _get_reset_token_or_none,
                       save_user_password, _get_reset_code_or_none)
 from .models import OneTimePassword
 from .services.helpers import create_otp_for_user, create_password_reset_for_user, _generate_url_for_password_reset
@@ -71,15 +71,16 @@ class CodeUrlVerificationViewSet(viewsets.ModelViewSet):
         code = request.query_params.get("code", None)
         if code is None:
             return Response({"status": "invalid", "detail": "Code not provided"}, status=status.HTTP_400_BAD_REQUEST)
-        one_time_password_instance = _get_one_time_code_or_none(code)
+        one_time_password_instance = _get_code(code)
         if one_time_password_instance is None:
             return Response({"status": "Failed", "detail": "OTP provided is Invalid"}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = self.get_serializer(data={"email": one_time_password_instance.user.email, "code": code})
-        if serializer.is_valid(raise_exception=True):
-            verify = _verify_account(one_time_password_instance.user, one_time_password_instance)
-            if verify.get("status"):
-                return Response({"status":"success", "detail": "Account Verification Completed Successfully"}, 
-                            status=status.HTTP_200_OK)
+        else:
+            serializer = self.get_serializer(data={"email": one_time_password_instance.user.email, "code": code})
+            if serializer.is_valid(raise_exception=True):
+                verify = _verify_account(one_time_password_instance.user, one_time_password_instance)
+                if verify.get("success"):
+                    return Response({"status":"success", "detail": "Account Verification Completed Successfully"}, 
+                                status=status.HTTP_200_OK)
         return Response({"status": "Failed", "detail": "OTP verification Failed"}, status=status.HTTP_400_BAD_REQUEST)
     
 class OneTimePasswordResendView(APIView):
@@ -183,4 +184,3 @@ class PasswordResetViewSet(viewsets.ModelViewSet):
         except Exception as exc:
             logger.exception(f"password_reset_failed: {str(exc)}", extra={"email": user.email})
         return Response({"status": "success", "detail": "password_reset_confirmed"}, status=status.HTTP_200_OK)
-

@@ -9,7 +9,6 @@ from django.utils import timezone
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-print(BASE_DIR)
 
 env = environ.Env(MAIL_ENABLED=(bool, False), SMTP_LOGIN=(str, 'DEFAULT'))
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
@@ -179,14 +178,14 @@ STATIC_URL = 'static/'
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": env("REDIS_LOCATION") + "/0",
+        "LOCATION": env("REDIS_URL"),
         "TIMEOUT": 300,
         "KEY_PREFIX": "SkillSpeed"
     } 
 }
 
-CELERY_BROKER_URL = env("REDIS_LOCATION" + "/1", default="redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = env("REDIS_LOCATION" + "/1", default="redis://localhost:6379/1")
+CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = env("REDIS_URL", default="redis://localhost:6379/1")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"

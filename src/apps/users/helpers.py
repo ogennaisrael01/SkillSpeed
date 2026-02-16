@@ -13,6 +13,10 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 import email_validator
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 from typing import Optional
 
@@ -85,9 +89,12 @@ def _get_user_by_email(email: str):
     except User.DoesNotExist:
         return None
 
-def _get_code(code: str, user):
+def _get_code(code: str, user:str = None):
     try:
-        one_time_password = OneTimePassword.objects.get(user=user, raw_code=code, is_active=True)
+        if user:
+            one_time_password = OneTimePassword.objects.get(user=user, raw_code=code, is_active=True)
+        else:
+            one_time_password = OneTimePassword.objects.get(raw_code=code, is_active=True)
         if verify_otp(code, one_time_password.hash_code):
             return one_time_password
     except OneTimePassword.DoesNotExist:
@@ -104,20 +111,12 @@ def _verify_account(user, code_instance: OneTimePassword) -> dict:
                 code_instance.is_used = False
                 user.save(update_fields=['is_active', "is_verified"])
                 code_instance.save(update_fields=["is_used"])
+            return {"success": True, "message": "Account verified successfully"}
         except IntegrityError:
             raise
         except Exception:
             raise ValidationError(_("Account verification due to common exception errors"))
-        return {"success": True, "message": "Account verified successfully"}
-
-def _get_one_time_code_or_none(code: str):
-    hash_code = _hash_otp_code(code)
-    try:
-        one_time_password = OneTimePassword.objects.get(hash_code__iexact=hash_code, is_active=True)
-        return one_time_password
-    except OneTimePassword.DoesNotExist:
-        return None
-    
+        
 def _get_reset_token_or_none(token):
     try:
         token = PasswordReset.objects.get(reset_token=token.strip(), is_active=True)
