@@ -113,7 +113,7 @@ def _verify_account(user, code_instance: OneTimePassword) -> dict:
 def _get_one_time_code_or_none(code: str):
     hash_code = _hash_otp_code(code)
     try:
-        one_time_password = OneTimePassword.objects.get(hash_code__iexact=hash_code)
+        one_time_password = OneTimePassword.objects.get(hash_code__iexact=hash_code, is_active=True)
         return one_time_password
     except OneTimePassword.DoesNotExist:
         return None
