@@ -53,7 +53,7 @@ class ChildProfileOwner(BasePermission):
             user = request.user
             if not user.is_authenticated:
                 return False
-            return getattr(obj.guardian, "user") == getattr(request, "user")
+            return getattr(obj, "guardian") == getattr(request, "user")
         return False
 
 class ChildRole(BasePermission):

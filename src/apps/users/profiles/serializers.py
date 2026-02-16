@@ -87,7 +87,7 @@ class ChildProfileCreateSerializer(serializers.ModelSerializer):
 
     default_error_messages = {
             "invalid_date_of_birth": _("The date_of_birth provided is not valid."),
-            "date_of_birth_too_old": _("The child must be less than 15 years old."),
+            "date_of_birth_too_old_or_young": _("The child must be less than 15 years old, but not below 5."),
             "date_of_birth_in_future": _("The date_of_birth cannot be in the future."),
             "date_of_birth_required": _("The date_of_birth field is required."),
             "gender_required": _("The gender field is required."),
@@ -102,16 +102,19 @@ class ChildProfileCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_date_of_birth(self, value):
-        # max_age: 15 years
+        # max_age: 15 years, min age 5
         if not value:
             self.fail("date_of_birth_required")
         if not isinstance(value, datetime.date):
             self.fail("invalid_date_of_birth")
         if value > timezone.now().date():
             self.fail("date_of_birth_in_future")
-        year = value.year + 15
-        if year < timezone.now().date().year:
-            self.fail("date_of_birth_too_old")
+        birth_year = value.year
+        current_year = timezone.now().year
+        child_age = current_year - birth_year
+        if child_age > 15 or child_age < 5:
+            self.fail("date_of_birth_too_old_or_young")
+
         return value
     
     def validate_gender(self, value):
@@ -146,7 +149,7 @@ class ChildProfileCreateSerializer(serializers.ModelSerializer):
     
 class ChildReadSerializer(serializers.ModelSerializer):
     interests = InterestSerializer(many=True, read_only=True)
-    guardian = serializers.SerializerMethodField()
+    guardian = UserReadSerializer()
     class Meta:
         model = ChildProfile
         fields = [
@@ -156,15 +159,6 @@ class ChildReadSerializer(serializers.ModelSerializer):
             "is_active", "created_at",
             "interests", "guardian"
         ]
-
-    def get_guardian(self, obj):
-        if not isinstance(obj, ChildProfile):
-            return None
-        return {
-            "guardian_name": obj.guardian.get_full_name_or_none(),
-            "email": obj.guardian.email,
-            "pk": obj.guardian.pk
-        }
 
 class GuardianProfileSerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()

@@ -34,7 +34,7 @@ class TestUserSerializer:
         request.user = guardian_user
 
         request_data = {
-            "date_of_birth": "2011-01-02",
+            "date_of_birth": "2012-01-02",
             "first_name": faker.first_name(),
             "last_name": faker.last_name(),
             "middle_name": faker.last_name(),

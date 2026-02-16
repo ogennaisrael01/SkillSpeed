@@ -210,28 +210,18 @@ class ChildProfileManagement(viewsets.ModelViewSet):
     queryset = ChildProfile.objects.select_related("guardian").prefetch_related("interest")
 
     def get_serializer_class(self):
-        if self.action in ("put", "patch"):
+        if self.action in ("update", "partial_update"):
             return ChildProfileCreateSerializer
         return ChildReadSerializer
     
     def get_permissions(self):
-        if self.action in ("update", "partial_update"):
+        if self.action in ("update", "partial_update", "destroy"):
             return [ChildProfileOwner()]
         return [permissions.IsAuthenticated()]
     
     def get_queryset(self):
         return self.queryset.filter(is_active=True, is_deleted=False).all()
-
-    def check_object_permissions(self, request, obj):
-        if self.action in ("put", "patch", "destroy"):
-            child_id = self.kwargs.get("pk")
-            if child_id is None:
-                raise ValidationError("child 'pk' is not provided", code="invalid_request")
-            child = get_object_or_404(ChildProfile, pk=child_id)
-            guardian = getattr(child, "guardian")
-            if guardian.user != request.user:
-                raise PermissionDenied("You dont have valid access to perform this action", code="invalid_request")
-        
+    
 class InterestViewSet(viewsets.ModelViewSet):
     serializer_class = InterestSerializer
     queryset = ChildInterest.objects.select_related("child")    
