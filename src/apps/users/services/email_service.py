@@ -52,7 +52,7 @@ def _send_mail_base(context: dict) -> bool:
         logger.exception("Missing keys in email context")
         raise 
     except Exception as e:
-        logger.exception("Error preparing email")
+        logger.exception(f"Error preparing email, {e}")
         raise
 
 

@@ -10,13 +10,14 @@ from sendgrid.helpers.mail import Mail, Email, To, Content
 from django.conf import settings
 import os
 
-@permission_classes(permission_classes=[permissions.AllowAny])
+
 @api_view(http_method_names=["get"])
+@permission_classes(permission_classes=[permissions.IsAuthenticated])
 def health_check(request: HttpRequest) -> Response:
     """ A simple api view for project health check """
     return Response(data={"status": "succes", "detail": {"users": "/api/v1/auth/"}})
 
-@permission_classes(permission_classes=[permissions.AllowAny])
+@permission_classes(permission_classes=[permissions.IsAuthenticated])
 @api_view(http_method_names=["get"])
 def test_send_email(request: HttpRequest) -> Response:
     """ Test email notification using sendgrid """

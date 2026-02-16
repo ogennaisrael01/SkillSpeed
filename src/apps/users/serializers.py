@@ -86,17 +86,20 @@ class UserVerificationSerializer(serializers.Serializer):
     
     def validate(self, attrs):
         email, code = attrs.get("email"), attrs.get("code")
-        if not any([email, code]):
+        if email is None or code is None:
             raise serializers.ValidationError(_("'email' or code is required to valaidate account"))
         if _check_email_already_exists(email):
             raise serializers.ValidationError("Account already verified and ready for login")
+        
         user = _get_user_by_email(email)
         if not user.account_status == User.AccountStatus.ACTIVE:
             raise serializers.ValidationError("Account already deactivated")
-        one_time_passwrod = _get_code(code, user)
-        if any([user, one_time_passwrod]) is None:
+        
+        one_time_password = _get_code(code, user)
+        if user is None or one_time_password is None:
             raise serializers.ValidationError(_("Invalid code or email provided"))
-        if not one_time_passwrod.is_active or one_time_passwrod.is_used:
+        
+        if not one_time_password.is_active or one_time_password.is_used:
             raise serializers.ValidationError("Password already expired or used. Request another one")
         return attrs
 
@@ -159,3 +162,14 @@ class PasswordResetUrlSerializer(serializers.Serializer):
     def validate_confirm_password(self, value):
         confirm_password_validate = UserRegistrationSerializer()
         return confirm_password_validate.validate_confirm_password(value)
+
+
+class UserReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "email", "first_name",
+            "last_name", "user_role",
+            "is_active", "account_status",
+            
+        ]

@@ -8,7 +8,8 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+print(BASE_DIR)
 
 env = environ.Env(MAIL_ENABLED=(bool, False), SMTP_LOGIN=(str, 'DEFAULT'))
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
@@ -28,6 +29,12 @@ OTP_LIFE = env("OTP_LIFE", default=10)  # in minutes
 BASE_URL = env("BASE_URL", default="http://localhost:8000/")
 APP_NAME = env("APP_NAME", default="SkillSpeed")
 
+GEMINI_API_KEY = env("GEMINI_API_KEY")
+
+CHAPA_SECRET_KEY=env("CHAPA_SECRET_KEY", None)
+CHAPA_INIT_URL=env("CHAPA_INIT_URL", None)
+CHAPA_VERIFY_URL=env("CHAPA_VERIFY_URL", None)
+
 # Application definitionS
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -38,8 +45,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     "social_django",
+    "rest_framework_simplejwt",
     "drf_yasg",
+    "rest_framework_simplejwt.token_blacklist",
+    "django_filters",
+
     'apps.users.apps.UsersConfig',
+    "apps.skills.apps.SkillsConfig",
+    "apps.lesson.apps.LessonConfig",
 ]
 
 MIDDLEWARE = [
@@ -71,12 +84,31 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny"
+    ]
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timezone.timedelta(minutes=40),
+    "REFRESH_TOKEN_LIFETIME": timezone.timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "UPDATE_LAST_LOGIN": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "USER_ID_FIELD": "user_id",
+    "USER_ID_CLAIM": "user_id",
+}
 
 AUTHENTICATION_BACKENDS = (
-    "social_core.backends.github.GithubOAuth2",
-    "social_core.backends.google.GoogleOAuth2",
+    # "social_core.backends.github.GithubOAuth2",
+    # "social_core.backends.google.GoogleOAuth2",
     # "social_core.backends.facebook.FacebookOAuth2",
-    "apps.users.backends.CustomBackend"
+    "apps.users.backends.CustomBackend",
 )
 
 
@@ -168,9 +200,5 @@ CELERY_BEAT_SCHEDULE = {
     "auto-expire-reset-code": {
         "task": "apps.users.services.tasks.auto_deactivate_reset_code",
         "schedule": crontab(minute="*/5")
-    },
-    "auto-delete-expire-reset-code-after-every-10-hours":{
-        "task": "apps.users.services.tasks.auto_delete_expires_reset_codes",
-        "schedule": crontab(hour="*/10")
     }
 }

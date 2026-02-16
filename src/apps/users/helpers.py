@@ -1,5 +1,5 @@
 from .services.tasks import send_email_on_quene, logger
-from .services.helpers import _hash_otp_code
+from .services.helpers import _hash_otp_code, verify_otp
 from .models import OneTimePassword, PasswordReset
 
 from django.contrib.auth import get_user_model
@@ -13,6 +13,10 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 import email_validator
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 from typing import Optional
 
@@ -80,16 +84,19 @@ def _validate_serializer(serializer):
     
 def _get_user_by_email(email: str):
     try:
-        user = User.objects.get(email__iexact=email)
+        user = User.objects.get(email=email)
         return user
     except User.DoesNotExist:
         return None
 
-def _get_code(code: str, user):
-    hash_code = _hash_otp_code(code)
+def _get_code(code: str, user:str = None):
     try:
-        one_time_password = OneTimePassword.objects.get(hash_code__iexact=hash_code, user=user)
-        return one_time_password
+        if user:
+            one_time_password = OneTimePassword.objects.get(user=user, raw_code=code, is_active=True)
+        else:
+            one_time_password = OneTimePassword.objects.get(raw_code=code, is_active=True)
+        if verify_otp(code, one_time_password.hash_code):
+            return one_time_password
     except OneTimePassword.DoesNotExist:
         return None
     
@@ -104,20 +111,12 @@ def _verify_account(user, code_instance: OneTimePassword) -> dict:
                 code_instance.is_used = False
                 user.save(update_fields=['is_active', "is_verified"])
                 code_instance.save(update_fields=["is_used"])
+            return {"success": True, "message": "Account verified successfully"}
         except IntegrityError:
             raise
         except Exception:
             raise ValidationError(_("Account verification due to common exception errors"))
-        return {"success": True, "message": "Account verified successfully"}
-
-def _get_one_time_code_or_none(code: str):
-    hash_code = _hash_otp_code(code)
-    try:
-        one_time_password = OneTimePassword.objects.get(hash_code__iexact=hash_code)
-        return one_time_password
-    except OneTimePassword.DoesNotExist:
-        return None
-    
+        
 def _get_reset_token_or_none(token):
     try:
         token = PasswordReset.objects.get(reset_token=token.strip(), is_active=True)
@@ -134,7 +133,14 @@ def save_user_password(user, password):
 
 def _get_reset_code_or_none(code):
     try:
-        code = PasswordReset.objects.get(reset_code=code.strip(), is_active=True)
-        return code
+        code_instance = PasswordReset.objects.get(raw_code=code, is_active=True)
+        if verify_otp(code, code_instance.reset_code):
+            return code_instance
     except PasswordReset.DoesNotExist:
         return None
+
+def user_can_authenticate(user):
+    if hasattr(user, "is_active") and hasattr(user, "is_verified"):
+        return (getattr(user, "is_active", True) and 
+                getattr(user, "is_verified", True))
+    return False

@@ -4,22 +4,20 @@ from django.shortcuts import get_object_or_404
 
 
 class CustomBackend(ModelBackend):
-    def authenticate(self, request, username = ..., password = ..., **kwargs):
+    def authenticate(self, request, username = None, password = None, **kwargs):
         UserModel = get_user_model()
         if username is None:
             username = kwargs.get(UserModel.USERNAME_FIELD)
-        if not any([username, password]):
-            return 
-        user = get_object_or_404(UserModel, email=username, is_active=True, account_status=UserModel.AccountStatus.ACTIVE)
-        if UserModel.DoesNotExist:
-            UserModel.set_password(password)
-        else:
-            if user.check_password(password):
-                return user if self.user_can_authenticate(user) else None
-    
+        if username is None or password is None:
+            return None
+        user = UserModel.objects.get(email=username, is_active=True, 
+                                     account_status=UserModel.AccountStatus.ACTIVE)
+        if user.check_password(password):
+            return user if self.user_can_authenticate(user) else None
+        return None
     def get_user(self, user_id):
         UserMOdel = get_user_model()
-        user = get_object_or_404(UserMOdel, pk=user_id, account_status=UserMOdel.AccountStatus.ACTIVE)
+        user = UserMOdel.objects.get(pk=user_id, account_status=UserMOdel.AccountStatus.ACTIVE)
         if UserMOdel.DoesNotExist:
             return None
         else:

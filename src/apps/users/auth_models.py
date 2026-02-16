@@ -4,14 +4,13 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, Permis
 
 import uuid
 
-
 class UserManager(BaseUserManager):
-    def create_user(self, email: str, password: str = None, user_role=None, **extra_fields):
+    def create_user(self, email: str, password: str = None, user_role: str =None, **extra_fields):
         """"""
         if not all([email]):
             raise ValueError("Email is required")
         valid_email = self.normalize_email(email)
-        user = self.model(email=valid_email, user_role=None, **extra_fields)
+        user = self.model(email=valid_email, user_role=user_role, **extra_fields)
         if password:
             user.set_password(password)
         else:
@@ -36,6 +35,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         INSTRUCTOR =  "INSTRUCTOR", "Instructor"
         GUARDIAN = "GUARDIAN", "Guardian"
 
+    class ActiveProfile(models.TextChoices):
+        CHILD = "CHILD", "Child"
+        GUARDIAN = "GUARDIAN", "Guardian"
+
     user_id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
     email = models.EmailField(unique=True, max_length=200)
     first_name = models.CharField(max_length=200)
@@ -48,6 +51,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
 
     # account status
+    active_profile = models.CharField(max_length=200, choices=ActiveProfile, default=None, null=True, blank=True)
+    active_account = models.OneToOneField("ChildProfile", on_delete=models.SET_NULL, null=True, blank=True, related_name="active_account")
     account_status = models.CharField(max_length=200, 
                                       choices=AccountStatus.choices,
                                         default=AccountStatus.ACTIVE) # active, suspended, deactivated
@@ -99,6 +104,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             self.is_staff
         )
     
+    def __str__(self):
+        return  "CustomUser({}, {})".format(self.email, self.is_active)
+    
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["email"], name="unique_email")
@@ -108,3 +116,4 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             models.Index(fields=["email"], name="email_idx"),
             models.Index(fields=["created_at"], name="time_idx"),
         ]
+        app_label = "users"
