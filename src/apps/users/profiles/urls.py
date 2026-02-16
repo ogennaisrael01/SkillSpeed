@@ -35,7 +35,7 @@ certificate_detail = views.CertificatedViewSet.as_view({
 })
 
 profile_urlpatterns: list[URLResolver] = [
-    path("profile/me/", views.ProfileRetrieveAPIView.as_view(), name="auth_user_profile"),
+    path("profile/detail/", views.ProfileRetrieveAPIView.as_view(), name="auth_user_profile"),
     path("", include(routers.urls)),
     path("account/<uuid:child_pk>/switch/", views.SwithBetweenChildAccountView.as_view(), name="profile_switch"),
     path("child/<uuid:pk>/profile/", child_profile_management, name="child_profile"),

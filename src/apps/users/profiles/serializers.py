@@ -87,7 +87,7 @@ class ChildProfileCreateSerializer(serializers.ModelSerializer):
 
     default_error_messages = {
             "invalid_date_of_birth": _("The date_of_birth provided is not valid."),
-            "date_of_birth_too_old": _("The child must be less than 15 years old."),
+            "date_of_birth_too_old_or_young": _("The child must be less than 15 years old, but not below 5."),
             "date_of_birth_in_future": _("The date_of_birth cannot be in the future."),
             "date_of_birth_required": _("The date_of_birth field is required."),
             "gender_required": _("The gender field is required."),
@@ -102,16 +102,19 @@ class ChildProfileCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_date_of_birth(self, value):
-        # max_age: 15 years
+        # max_age: 15 years, min age 5
         if not value:
             self.fail("date_of_birth_required")
         if not isinstance(value, datetime.date):
             self.fail("invalid_date_of_birth")
         if value > timezone.now().date():
             self.fail("date_of_birth_in_future")
-        year = value.year + 15
-        if year < timezone.now().date().year:
-            self.fail("date_of_birth_too_old")
+        birth_year = value.year
+        current_year = timezone.now().year
+        child_age = current_year - birth_year
+        if child_age > 15 or child_age < 5:
+            self.fail("date_of_birth_too_old_or_young")
+
         return value
     
     def validate_gender(self, value):
@@ -140,13 +143,13 @@ class ChildProfileCreateSerializer(serializers.ModelSerializer):
             validated_data[key] = validated_data[key].title() if validated_data[key] else None
         
         with transaction.atomic():
-            ChildProfile.objects.create(guardian=user, **validated_data)
+            child_profile = ChildProfile.objects.create(guardian=user, **validated_data)
         
-        return validated_data
+        return child_profile
     
 class ChildReadSerializer(serializers.ModelSerializer):
     interests = InterestSerializer(many=True, read_only=True)
-    guardian = serializers.SerializerMethodField()
+    guardian = UserReadSerializer()
     class Meta:
         model = ChildProfile
         fields = [
@@ -156,15 +159,6 @@ class ChildReadSerializer(serializers.ModelSerializer):
             "is_active", "created_at",
             "interests", "guardian"
         ]
-
-    def get_guardian(self, obj):
-        if not isinstance(obj, ChildProfile):
-            return None
-        return {
-            "guardian_name": obj.guardian.get_full_name_or_none(),
-            "email": obj.guardian.email,
-            "pk": obj.guardian.pk
-        }
 
 class GuardianProfileSerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
@@ -178,7 +172,7 @@ class GuardianProfileSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "guardian_id", "created_at", 
-            "user", "is_active", "children"
+            "is_active", "children"
         ]
 
     def get_children(self, obj):
@@ -212,25 +206,19 @@ class CertificateSerializer(serializers.ModelSerializer):
             "certificate_id"
         ]
     
+    def validate_name(self, value):
+        return value.title()
+    
     def validate_issued_on(self, value):
         if not isinstance(value, datetime.date):
             self.fail("invalid_date")
-        if value > timezone.now().date:
+        if value > timezone.now().date():
             self.fail("date_in_future")
         return value
 
-    def validate(self, attrs):
-        request = self.context.get("request")
-        instructor_profile = self.context.get("instrutor_profile")
-        user_profile = request.user.profile if hasattr(request.user, "profile") else None
-        if user_profile is None:
-            raise serializers.ValidationError("No Profile for user %s", user_profile)
-        if user_profile != instructor_profile:
-            self.fail("unauthorized")
-        return attrs
     
 class InstructorSerializer(serializers.ModelSerializer):
-    certificates = CertificateSerializer(read_only=True, many=True)
+    certificates = CertificateSerializer(required=False, many=True)
     user = UserReadSerializer(read_only=True)
 
     default_error_messages = {
@@ -241,6 +229,9 @@ class InstructorSerializer(serializers.ModelSerializer):
         fields = [
             "instructor_id", "user",
             "display_name", "certificates"
+        ]
+        read_only_fields = [
+            "instructor_id"
         ]
     
     def validate_display_name(self, value):
@@ -254,18 +245,31 @@ class InstructorSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         request = self.context.get("request")
-        user: User = request.user if hasattr(request, "user") else None
+        user = request.user 
         if user is None:
             self.fail("user_invalid")
         display_name = validated_data.get("display_name", instance.display_name)
         if display_name is None:
             display_name = user.get_full_name_or_none()
-        certificates = validated_data.get("certificates")
-        with transaction.atomic():
-            Certificates.objects.create(user=user, **certificates)
-            Instructor.objects.update_or_create(user=user, defaults={"display_name": display_name, "is_active": True})
 
-        return validated_data
+        if "certificates" in validated_data.keys():
+            certificates = validated_data.get("certificates")
+            with transaction.atomic():
+                for certificate in certificates:
+                    if Certificates.objects.filter(user=instance, name=certificate["name"].title(), is_active=True).exists():
+                        certificate_instance = instance.certificates.get(name=certificate["name"])
+                        for key, value in certificate.items():
+                            setattr(certificate_instance, key, value)
+                        certificate_instance.save()
+                    else:
+                        Certificates.objects.create(user=instance, **certificate, is_active=True)
+        validated_data.pop("certificates")
+        with transaction.atomic():
+            for key, value in validated_data.items():
+                setattr(instance, key, value)
+            instance.save()
+
+        return instance
 
 class RoleSwitchSerializer(serializers.Serializer):
     allowed_roles = getattr(User, "ActiveProfile")
@@ -285,7 +289,10 @@ class RoleSwitchSerializer(serializers.Serializer):
         user = getattr(request, "user", None)
         if user is None:
             raise serializers.ValidationError("Auth credentails not provided!", code="invalid_request")
-         
+
+        active_profile = getattr(user, "active_profile")
+        if active_profile == role.upper():
+            raise serializers.ValidationError(_(f"Your Active Profile: {active_profile}"), code="role_already_selected")
         with transaction.atomic():
             user.active_profile = role.upper() 
             user.save()

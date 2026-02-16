@@ -51,7 +51,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
 
     # account status
-    active_profile = models.CharField(max_length=200, choices=ActiveProfile, default=ActiveProfile.GUARDIAN)
+    active_profile = models.CharField(max_length=200, choices=ActiveProfile, default=None, null=True, blank=True)
     active_account = models.OneToOneField("ChildProfile", on_delete=models.SET_NULL, null=True, blank=True, related_name="active_account")
     account_status = models.CharField(max_length=200, 
                                       choices=AccountStatus.choices,

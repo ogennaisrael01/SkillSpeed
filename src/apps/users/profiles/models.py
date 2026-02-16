@@ -40,12 +40,12 @@ class ChildProfile(models.Model):
 
     guardian = models.ForeignKey(User, on_delete=models.CASCADE, related_name="children")
 
-    gender = models.CharField(max_length=200, choices=GenderChoices.choices, default=None)
-    date_of_birth = models.DateField(null=False, blank=False)
+    gender = models.CharField(max_length=200, choices=GenderChoices.choices, default=None, blank=True)
+    date_of_birth = models.DateField(null=False, blank=True)
 
-    first_name = models.CharField(max_length=200)
-    last_name = models.CharField(max_length=200)
-    middle_name = models.CharField(max_length=200)
+    first_name = models.CharField(max_length=200, blank=True)
+    last_name = models.CharField(max_length=200, blank=True)
+    middle_name = models.CharField(max_length=200, blank=True)
 
     is_active = models.BooleanField(default=True, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
@@ -102,7 +102,7 @@ class ChildInterest(models.Model):
 class Instructor(models.Model):
     instructor_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4, db_index=True)
 
-    display_name = models.CharField(max_length=200)
+    display_name = models.CharField(max_length=200, blank=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
 
     is_active = models.BooleanField(default=True, db_index=True)
@@ -131,5 +131,9 @@ class Certificates(models.Model):
 
     class Meta:
         verbose_name = _("Certificate")
+
+        constraints = [
+            models.UniqueConstraint(fields=["user", "name"], name="unique_name_and_user")
+        ]
 
 

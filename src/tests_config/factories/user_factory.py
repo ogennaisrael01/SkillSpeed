@@ -1,15 +1,23 @@
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
+import random
+
 from apps.users.models import OneTimePassword, PasswordReset
 from apps.users.helpers import _hash_otp_code
-from test.helpers import password_reset_token
-from apps.users.profiles.models import Guardian, Instructor
+from apps.users.profiles.models import (
+    Guardian, 
+    Instructor, 
+    Certificates,
+    ChildProfile,
+)
 
 import factory
 
 UserModel = get_user_model()
 otp_code = "0987494"
+
+
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = UserModel
@@ -47,3 +55,24 @@ class InstructorFactory(factory.django.DjangoModelFactory):
         model = Instructor
     user = factory.SubFactory(UserFactory)
     display_name  = factory.LazyAttribute(lambda instructor: f"{instructor.user.first_name} {instructor.user.last_name}")
+
+
+class CertificateFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Certificates
+    
+    user = factory.SubFactory(Instructor)
+    name = None
+    description = "default-description"
+    issued_on = "2025-04-02"
+
+class ChildProfileFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ChildProfile
+    
+    guardian = factory.SubFactory(UserFactory)
+    first_name = factory.Faker("name")
+    last_name = factory.Faker("name")
+    middle_name = factory.Faker("name")
+    date_of_birth = '2014-02-10'
+    gender = random.choice(["MALE", "FEMALE", "OTHER"])
