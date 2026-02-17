@@ -105,12 +105,10 @@ def _verify_account(user, code_instance: OneTimePassword) -> dict:
             raise ValidationError(_("'user is not a valid user instance"))
         try:
             with transaction.atomic():
-                user.is_active = True
-                user.is_verified = True
-                user.verified_at = timezone.now()
-                code_instance.is_used = False
-                user.save(update_fields=['is_active', "is_verified"])
-                code_instance.save(update_fields=["is_used"])
+                user.verify_account()
+                code_instance.is_used = True
+                code_instance.is_active = False
+                code_instance.save(update_fields=["is_used", "is_active"])
             return {"success": True, "message": "Account verified successfully"}
         except IntegrityError:
             raise
