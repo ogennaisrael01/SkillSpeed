@@ -4,15 +4,15 @@ from rest_framework import status
 import pytest
 from typing import Any
 
+
 @pytest.mark.django_db
 class TestUsers:
+
     def test_onboard(self, authenticated_client: APIClient):
         onboard_path = "/api/v1/profile/onboard/"
-        request_data = {
-            "role": "GUARDIAN",
-            "profile_completes": True
-        }
-        response = authenticated_client.patch(path=onboard_path, data=request_data)
+        request_data = {"role": "GUARDIAN", "profile_completes": True}
+        response = authenticated_client.patch(path=onboard_path,
+                                              data=request_data)
         result = response.json()
         assert result['status'] == "success"
         assert response.status_code == status.HTTP_200_OK
@@ -24,13 +24,14 @@ class TestUsers:
         assert str(guardian.pk) == result["detail"]['guardian_id']
         assert response.status_code == status.HTTP_200_OK
 
-    def test_profile_mine_read_instructor(self, instructor_client: APIClient, instructor):
+    def test_profile_mine_read_instructor(self, instructor_client: APIClient,
+                                          instructor):
         profile_path = '/api/v1/profile/detail/'
         response = instructor_client.get(path=profile_path)
         result = response.json()
         assert str(instructor.pk) == result["detail"]["instructor_id"]
         assert response.status_code == status.HTTP_200_OK
-    
+
     def test_profile_public_instructor(self, instructor_client, guardian):
         """
         Docstring for test_profile_public
@@ -61,7 +62,8 @@ class TestUsers:
         assert str(user_id) == result['detail']['instructor_id']
         assert response.status_code == status.HTTP_200_OK
 
-    def test_profile_view_admin(self, admin_client: APIClient, admin_user: Any, guardian, instructor):
+    def test_profile_view_admin(self, admin_client: APIClient, admin_user: Any,
+                                guardian, instructor):
         """ Retrieve user profiles """
         profile_path = "/api/v1/profile/"
         response = admin_client.get(path=profile_path)
@@ -70,47 +72,50 @@ class TestUsers:
         assert "guardian_data" and "instructor_data" in result
         assert response.status_code == status.HTTP_200_OK
 
-    def test_profile_patch_instructor(self, instructor_client: APIClient, instructor, create_certificate):
+    def test_profile_patch_instructor(self, instructor_client: APIClient,
+                                      instructor, create_certificate):
 
         update_path = "/api/v1/profile/detail/"
         request_data = {
-            "display_name": "Test Instructor",
-            "certificates": [
-                {
-                    "name": create_certificate.name,
-                    "issued_on": "2025-03-02",
-                    "description": "certificate description"
-                }
-            ]
+            "display_name":
+            "Test Instructor",
+            "certificates": [{
+                "name": create_certificate.name,
+                "issued_on": "2025-03-02",
+                "description": "certificate description"
+            }]
         }
-        response = instructor_client.put(path=update_path, data=request_data, format="json")
+        response = instructor_client.put(path=update_path,
+                                         data=request_data,
+                                         format="json")
         result: dict = response.json()
         assert result["instructor_id"] == str(instructor.pk)
         assert result["display_name"] == request_data["display_name"]
         assert response.status_code == status.HTTP_200_OK
 
-    def test_profile_patch_guardian(self, guardian_client: APIClient, guardian):
+    def test_profile_patch_guardian(self, guardian_client: APIClient,
+                                    guardian):
         update_path = "/api/v1/profile/detail/"
 
-        request_data = {
-            "display_name": "Test Guardian"
-        }
-        response = guardian_client.put(path=update_path, data=request_data, format="json")
+        request_data = {"display_name": "Test Guardian"}
+        response = guardian_client.put(path=update_path,
+                                       data=request_data,
+                                       format="json")
         result = response.json()
-        assert result["display_name"] == request_data["display_name"]   
+        assert result["display_name"] == request_data["display_name"]
         assert result["guardian_id"] == str(guardian.pk)
         assert response.status_code == status.HTTP_200_OK
-    
+
     def test_role_switch(self, guardian_client: APIClient):
         """ 
         guardian can switch from their acctive profile as guardian to child 
         so they can be able to access child content
         """
         url_path = "/api/v1/profile/switch/"
-        request_data = {
-            "role": "CHILD"
-        }
-        response = guardian_client.patch(path=url_path, data=request_data, format="json")
+        request_data = {"role": "CHILD"}
+        response = guardian_client.patch(path=url_path,
+                                         data=request_data,
+                                         format="json")
         result = response.json()
         assert result["status"] == "success"
         assert response.status_code == status.HTTP_200_OK

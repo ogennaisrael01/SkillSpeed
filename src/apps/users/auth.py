@@ -12,6 +12,7 @@ from .helpers import _validate_email, user_can_authenticate
 
 User = get_user_model()
 
+
 class CustomObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
@@ -19,23 +20,40 @@ class CustomObtainPairSerializer(TokenObtainPairSerializer):
         email = _validate_email(attrs["email"])
         valid_email = email["valid_email"] if email.get("success") else None
         if valid_email is None:
-            raise serializers.ValidationError(_("email returned none when verifing email address"))
+            raise serializers.ValidationError(
+                _("email returned none when verifing email address"))
         try:
-            user = User.objects.get(email=valid_email) 
+            user = User.objects.get(email=valid_email)
         except User.DoesNotExist:
-            raise AuthenticationFailed(code="invalid_credentials", detail={"status": "Failed", "message": f"account not found for user {valid_email}"})
+            raise AuthenticationFailed(
+                code="invalid_credentials",
+                detail={
+                    "status": "Failed",
+                    "message": f"account not found for user {valid_email}"
+                })
         if not user_can_authenticate(user=user):
-            raise AuthenticationFailed(code="invalid_request", detail={"status": "Failed", "detail": _("account not verified")})
+            raise AuthenticationFailed(code="invalid_request",
+                                       detail={
+                                           "status": "Failed",
+                                           "detail": _("account not verified")
+                                       })
         if not user.check_password(password):
-            raise AuthenticationFailed(code="invalid_credentails", detail={"status": "failed", "detail": _("invalid_credentials")})
+            raise AuthenticationFailed(code="invalid_credentails",
+                                       detail={
+                                           "status": "failed",
+                                           "detail": _("invalid_credentials")
+                                       })
         self.user = user
         data = super().validate(attrs)
-        data.update({"user_data": {
-            "user_id": user.pk, "email": user.email,
-            "name": user.get_full_name_or_none() or ""
-        }})
+        data.update({
+            "user_data": {
+                "user_id": user.pk,
+                "email": user.email,
+                "name": user.get_full_name_or_none() or ""
+            }
+        })
         return data
-    
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -43,34 +61,35 @@ class CustomObtainPairSerializer(TokenObtainPairSerializer):
         token.set_jti()
         token["email"] = getattr(user, "email", None)
         return token
-    
+
+
 class CustomLogoutSerializer(serializers.Serializer):
-    refresh_token = serializers.CharField(required=True, write_only=True, error_messages={
-        "required": _("Refresh token is required to logout.")
-    })
-    default_error_messages = {
-        "bad_token": _("Token is invalid or expired")
-    }
+    refresh_token = serializers.CharField(
+        required=True,
+        write_only=True,
+        error_messages={"required": _("Refresh token is required to logout.")})
+    default_error_messages = {"bad_token": _("Token is invalid or expired")}
 
     def get_user_from_token(self, token: str):
         token = RefreshToken(token=token)
         return token.get("user_id")
-    
+
     def validate(self, attrs):
         data = super().validate(attrs)
         request = self.context.get("request")
-        user = request.user 
-        # if user is None or "Anonymous": 
+        user = request.user
+        # if user is None or "Anonymous":
         #     raise serializers.ValidationError(_("Authentication credentials were not provided"), code="invali_request")
         token = attrs.get("refresh_token")
         user_id = self.get_user_from_token(token)
         if str(user_id) != str(user.pk):
-            raise serializers.ValidationError(_("Invalid Request. refresh token is Invalid"), code="refresh_token_invalid")
-         
+            raise serializers.ValidationError(
+                _("Invalid Request. refresh token is Invalid"),
+                code="refresh_token_invalid")
+
         outstanding_tokens = OutstandingToken.objects.filter(user=user).all()
         with transaction.atomic():
             # black list all outstanding token for this user
             BlacklistedToken.objects.bulk_create(
-                BlacklistedToken(token=token) for token in outstanding_tokens
-            )
+                BlacklistedToken(token=token) for token in outstanding_tokens)
         return attrs

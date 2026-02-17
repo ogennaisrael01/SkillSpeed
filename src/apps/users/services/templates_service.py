@@ -1,7 +1,10 @@
 from datetime import datetime
 from typing import Dict
 
-def genrate_context_for_otp(code = None, verification_url = None, email = None) -> Dict[str, str]:
+
+def genrate_context_for_otp(code=None,
+                            verification_url=None,
+                            email=None) -> Dict[str, str]:
     subject = "Your One Time Password (OTP) Code"
     return {
         "code": code,
@@ -12,7 +15,11 @@ def genrate_context_for_otp(code = None, verification_url = None, email = None) 
         "year": str(datetime.now().year)
     }
 
-def generate_context_for_password_reset(code=None, verification_url=None, email=None, name=None) -> Dict[str, str]:
+
+def generate_context_for_password_reset(code=None,
+                                        verification_url=None,
+                                        email=None,
+                                        name=None) -> Dict[str, str]:
     subject = "Password Reset Request (Time Limited)"
     template_name = "users/password_template.html"
     return {
