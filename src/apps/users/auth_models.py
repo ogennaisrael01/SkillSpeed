@@ -4,46 +4,62 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, Permis
 
 import uuid
 
+
 class UserManager(BaseUserManager):
-    def create_user(self, email: str, password: str = None, user_role: str =None, **extra_fields):
+
+    def create_user(self,
+                    email: str,
+                    password: str = None,
+                    user_role: str = None,
+                    **extra_fields):
         """"""
         if not all([email]):
             raise ValueError("Email is required")
         valid_email = self.normalize_email(email)
-        user = self.model(email=valid_email, user_role=user_role, **extra_fields)
+        user = self.model(email=valid_email,
+                          user_role=user_role,
+                          **extra_fields)
         if password:
             user.set_password(password)
         else:
             user.set_unusable_password()
         user.save(using=self._db)
         return user
-    def create_superuser(self, email, password = None, **extra_fields):
+
+    def create_superuser(self, email, password=None, **extra_fields):
         user = self.create_user(email=email, password=password, **extra_fields)
         setattr(user, "is_superuser", True)
         setattr(user, "is_staff", True)
         user.save(using=self._db)
         return user
-    
+
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
+
     class AccountStatus(models.TextChoices):
         ACTIVE = "ACTIVE", "Active"
         SUSPENDED = "SUSPENDED", "Suspended"
         DEACTIVATED = "DEACTIVATED", "Deactivated"
 
     class UserRoles(models.TextChoices):
-        INSTRUCTOR =  "INSTRUCTOR", "Instructor"
+        INSTRUCTOR = "INSTRUCTOR", "Instructor"
         GUARDIAN = "GUARDIAN", "Guardian"
 
     class ActiveProfile(models.TextChoices):
         CHILD = "CHILD", "Child"
         GUARDIAN = "GUARDIAN", "Guardian"
 
-    user_id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
+    user_id = models.UUIDField(primary_key=True,
+                               unique=True,
+                               default=uuid.uuid4)
     email = models.EmailField(unique=True, max_length=200)
     first_name = models.CharField(max_length=200)
     last_name = models.CharField(max_length=200)
-    user_role = models.CharField(max_length=200, choices=UserRoles.choices, default=None, null=True, blank=True)
+    user_role = models.CharField(max_length=200,
+                                 choices=UserRoles.choices,
+                                 default=None,
+                                 null=True,
+                                 blank=True)
 
     is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
@@ -51,11 +67,20 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
 
     # account status
-    active_profile = models.CharField(max_length=200, choices=ActiveProfile, default=None, null=True, blank=True)
-    active_account = models.OneToOneField("ChildProfile", on_delete=models.SET_NULL, null=True, blank=True, related_name="active_account")
-    account_status = models.CharField(max_length=200, 
-                                      choices=AccountStatus.choices,
-                                        default=AccountStatus.ACTIVE) # active, suspended, deactivated
+    active_profile = models.CharField(max_length=200,
+                                      choices=ActiveProfile,
+                                      default=None,
+                                      null=True,
+                                      blank=True)
+    active_account = models.OneToOneField("ChildProfile",
+                                          on_delete=models.SET_NULL,
+                                          null=True,
+                                          blank=True,
+                                          related_name="active_account")
+    account_status = models.CharField(
+        max_length=200,
+        choices=AccountStatus.choices,
+        default=AccountStatus.ACTIVE)  # active, suspended, deactivated
     #timastamp
     verified_at = models.DateTimeField(blank=True, null=True)
     suspended_at = models.DateTimeField(blank=True, null=True)
@@ -82,7 +107,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
                 self.deactivated_at = timezone.now()
                 self.save()
         return False
-    
+
     def verify_account(self):
         if isinstance(self, CustomUser):
             if hasattr(self, "is_verified"):
@@ -91,28 +116,26 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
                 setattr(self, "verified_at", timezone.now())
                 self.save()
         return False
-    
+
     def get_full_name_or_none(self):
         if all([self.first_name, self.last_name]):
             return self.first_name + " " + self.last_name
         return None
-    
+
     @property
     def is_admin(self):
-        return (
-            self.is_superuser,
-            self.is_staff
-        )
-    
+        return (self.is_superuser, self.is_staff)
+
     def __str__(self):
-        return  "CustomUser({}, {})".format(self.email, self.is_active)
-    
+        return "CustomUser({}, {})".format(self.email, self.is_active)
+
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["email"], name="unique_email")
         ]
         indexes = [
-            models.Index(fields=["is_active", "account_status"], name="active_status_idx"),
+            models.Index(fields=["is_active", "account_status"],
+                         name="active_status_idx"),
             models.Index(fields=["email"], name="email_idx"),
             models.Index(fields=["created_at"], name="time_idx"),
         ]

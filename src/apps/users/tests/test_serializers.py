@@ -8,13 +8,13 @@ import random
 import pytest
 from faker import Faker
 
-
-
 UserModel = get_user_model()
 faker = Faker()
 
+
 @pytest.mark.django_db
 class TestUserSerializer:
+
     def test_user_create(self):
         data = {
             "email": "testemail@gmail.com",
@@ -41,8 +41,8 @@ class TestUserSerializer:
             "gender": random.choice(["MALE", "FEMALE", "OTHER"])
         }
 
-        serializer = ChildProfileCreateSerializer(data=request_data, context={"request": request})
+        serializer = ChildProfileCreateSerializer(data=request_data,
+                                                  context={"request": request})
         serializer.is_valid(raise_exception=True)
         result = serializer.save()
         assert result.guardian == guardian_user
-

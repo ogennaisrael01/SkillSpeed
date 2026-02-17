@@ -13,3 +13,10 @@ npm-debug.log*
 *__pycache__/
 *.sqlite3
 *.bak
+.git
+pip
+.replit
+*.replit
+.config
+*config
+*.pip

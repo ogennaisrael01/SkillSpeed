@@ -6,7 +6,8 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.db import transaction, IntegrityError
 from django.utils import timezone
-from django.contrib.auth.password_validation import (validate_password as _validate_password, 
+from django.contrib.auth.password_validation import (validate_password as
+                                                     _validate_password,
                                                      MinimumLengthValidator)
 from django.utils.translation import gettext_lazy as _
 
@@ -15,12 +16,12 @@ from rest_framework.exceptions import ValidationError
 import email_validator
 import logging
 
-
 logger = logging.getLogger(__name__)
 
 from typing import Optional
 
 User = get_user_model()
+
 
 def _send_email_to_user(context: dict):
     """
@@ -39,7 +40,8 @@ def _send_email_to_user(context: dict):
     email = context.get("email")
     required_fields = ("email", "subject", "templete_name")
     if (context.get(field) for field in required_fields) is None:
-        raise ValidationError("Please provides the required fields for email OTP.")
+        raise ValidationError(
+            "Please provides the required fields for email OTP.")
     if not User.objects.filter(email=email).exists():
         raise ValidationError("User dosent exits in our database")
     context.update({"to_email": email})
@@ -51,24 +53,30 @@ def _send_email_to_user(context: dict):
         logger.exception("Exception while sending email.")
         raise
 
+
 def _validate_email(email: str) -> dict:
     if email is None:
         raise ValidationError("Email field is emapty...")
     try:
-        valid_email = email_validator.validate_email(email.strip(), check_deliverability=True)
+        valid_email = email_validator.validate_email(email.strip(),
+                                                     check_deliverability=True)
     except email_validator.EmailNotValidError:
-        raise 
+        raise
     return {"success": True, "valid_email": valid_email.normalized}
+
 
 def _check_email_already_exists(valid_email: str) -> bool:
     if valid_email is None:
         raise ValidationError("email field is emapty")
-    if User.objects.filter(email=valid_email, is_active=True, is_verified=True):
+    if User.objects.filter(email=valid_email, is_active=True,
+                           is_verified=True):
         return True
     return False
 
+
 def get_error_message():
     return _("No password Provided")
+
 
 def _normalize_and_validate_password(password: str):
     if not password:
@@ -76,12 +84,13 @@ def _normalize_and_validate_password(password: str):
     return _validate_password(password)
 
 
-def _validate_serializer(serializer): 
+def _validate_serializer(serializer):
     if serializer is None:
         raise ValidationError(_("Serializer is Empty"))
     serializer.is_valid(raise_exception=True)
     return serializer
-    
+
+
 def _get_user_by_email(email: str):
     try:
         user = User.objects.get(email=email)
@@ -89,56 +98,68 @@ def _get_user_by_email(email: str):
     except User.DoesNotExist:
         return None
 
-def _get_code(code: str, user:str = None):
+
+def _get_code(code: str, user: str = None):
     try:
         if user:
-            one_time_password = OneTimePassword.objects.get(user=user, raw_code=code, is_active=True)
+            one_time_password = OneTimePassword.objects.get(user=user,
+                                                            raw_code=code,
+                                                            is_active=True)
         else:
-            one_time_password = OneTimePassword.objects.get(raw_code=code, is_active=True)
+            one_time_password = OneTimePassword.objects.get(raw_code=code,
+                                                            is_active=True)
         if verify_otp(code, one_time_password.hash_code):
             return one_time_password
     except OneTimePassword.DoesNotExist:
         return None
-    
+
+
 def _verify_account(user, code_instance: OneTimePassword) -> dict:
-        if not isinstance(user, User):
-            raise ValidationError(_("'user is not a valid user instance"))
-        try:
-            with transaction.atomic():
-                user.verify_account()
-                code_instance.is_used = True
-                code_instance.is_active = False
-                code_instance.save(update_fields=["is_used", "is_active"])
-            return {"success": True, "message": "Account verified successfully"}
-        except IntegrityError:
-            raise
-        except Exception:
-            raise ValidationError(_("Account verification due to common exception errors"))
-        
+    if not isinstance(user, User):
+        raise ValidationError(_("'user is not a valid user instance"))
+    try:
+        with transaction.atomic():
+            user.verify_account()
+            code_instance.is_used = True
+            code_instance.is_active = False
+            code_instance.save(update_fields=["is_used"])
+        return {"success": True, "message": "Account verified successfully"}
+    except IntegrityError:
+        raise
+    except Exception:
+        raise ValidationError(
+            _("Account verification due to common exception errors"))
+
+
 def _get_reset_token_or_none(token):
     try:
-        token = PasswordReset.objects.get(reset_token=token.strip(), is_active=True)
+        token = PasswordReset.objects.get(reset_token=token.strip(),
+                                          is_active=True)
         return token
     except PasswordReset.DoesNotExist:
         return None
-    
+
+
 def save_user_password(user, password):
     account_status = getattr(user, "account_status")
     if account_status != "ACTIVE":
-        return 
+        return
     user.set_password(password)
     user.save(update_fields=["password"])
 
+
 def _get_reset_code_or_none(code):
     try:
-        code_instance = PasswordReset.objects.get(raw_code=code, is_active=True)
+        code_instance = PasswordReset.objects.get(raw_code=code,
+                                                  is_active=True)
         if verify_otp(code, code_instance.reset_code):
             return code_instance
     except PasswordReset.DoesNotExist:
         return None
 
+
 def user_can_authenticate(user):
     if hasattr(user, "is_active") and hasattr(user, "is_verified"):
-        return (getattr(user, "is_active", True) and 
-                getattr(user, "is_verified", True))
+        return (getattr(user, "is_active", True)
+                and getattr(user, "is_verified", True))
     return False

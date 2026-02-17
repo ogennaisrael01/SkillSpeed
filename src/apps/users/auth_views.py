@@ -8,10 +8,13 @@ from rest_framework import status
 from .auth import CustomObtainPairSerializer, CustomLogoutSerializer
 from .helpers import _validate_serializer
 
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomObtainPairSerializer
 
+
 token_obtain_view = CustomTokenObtainPairView.as_view()
+
 
 class CustomLogoutView(APIView):
     serializer_class = CustomLogoutSerializer
@@ -19,9 +22,15 @@ class CustomLogoutView(APIView):
     http_method_names = ["post"]
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context={"request": request})
+        serializer = self.serializer_class(data=request.data,
+                                           context={"request": request})
         valid_serializer = _validate_serializer(serializer)
-        return Response({"status": "success", "detail": "Logged Out Successfully"} ,status=status.HTTP_200_OK)
-    
-custom_logout_view = CustomLogoutView.as_view()
+        return Response(
+            {
+                "status": "success",
+                "detail": "Logged Out Successfully"
+            },
+            status=status.HTTP_200_OK)
 
+
+custom_logout_view = CustomLogoutView.as_view()

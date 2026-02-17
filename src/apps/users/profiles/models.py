@@ -6,41 +6,58 @@ import uuid
 
 User = get_user_model()
 
+
 class Guardian(models.Model):
-    guardian_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="guardian")
+    guardian_id = models.UUIDField(primary_key=True,
+                                   unique=True,
+                                   max_length=20,
+                                   default=uuid.uuid4)
+    user = models.OneToOneField(User,
+                                on_delete=models.CASCADE,
+                                related_name="guardian")
 
     display_name = models.CharField(max_length=200, null=True, blank=True)
 
     is_active = models.BooleanField(default=True, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
-                                     
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
     deleted_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"Guardian profile {self.display_name}: {self.is_active}"
-    
+
     class Meta:
         verbose_name = _("Guardian")
         verbose_name_plural = _("Guardians")
         indexes = [
-            models.Index(fields=["is_active", "is_deleted"], name="active_deleted_idx")
+            models.Index(fields=["is_active", "is_deleted"],
+                         name="active_deleted_idx")
         ]
-        ordering = ("user",)
+        ordering = ("user", )
+
 
 class ChildProfile(models.Model):
+
     class GenderChoices(models.TextChoices):
         MALE = "MALE"
         FEMALE = "FEMALE"
         OTHER = "OTHER"
 
-    child_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4)
+    child_id = models.UUIDField(primary_key=True,
+                                unique=True,
+                                max_length=20,
+                                default=uuid.uuid4)
 
-    guardian = models.ForeignKey(User, on_delete=models.CASCADE, related_name="children")
+    guardian = models.ForeignKey(User,
+                                 on_delete=models.CASCADE,
+                                 related_name="children")
 
-    gender = models.CharField(max_length=200, choices=GenderChoices.choices, default=None, blank=True)
+    gender = models.CharField(max_length=200,
+                              choices=GenderChoices.choices,
+                              default=None,
+                              blank=True)
     date_of_birth = models.DateField(null=False, blank=True)
 
     first_name = models.CharField(max_length=200, blank=True)
@@ -53,29 +70,34 @@ class ChildProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
     def __str__(self):
         return f" ChildProfile({self.child_id}, {self.guardian.pk})"
-    
+
     class Meta:
         verbose_name = _("Profile")
         verbose_name_plural = _("Profiles")
 
         constraints = [
-            models.UniqueConstraint(fields=["child_id", "guardian"], name="unique_child_guardian")
+            models.UniqueConstraint(fields=["child_id", "guardian"],
+                                    name="unique_child_guardian")
         ]
         indexes = [
             models.Index(fields=["child_id"], name="id_idx"),
             models.Index(fields=["is_active", "is_deleted"], name="active_idx")
-
         ]
 
-        ordering = ("-created_at",)
+        ordering = ("-created_at", )
+
 
 class ChildInterest(models.Model):
-    interest_id = models.UUIDField(max_length=20, unique=True, primary_key=True, default=uuid.uuid4)
+    interest_id = models.UUIDField(max_length=20,
+                                   unique=True,
+                                   primary_key=True,
+                                   default=uuid.uuid4)
 
-    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name="interest")
+    child = models.ForeignKey(ChildProfile,
+                              on_delete=models.CASCADE,
+                              related_name="interest")
 
     name = models.CharField(max_length=200)
     description = models.TextField(max_length=1000)
@@ -89,21 +111,26 @@ class ChildInterest(models.Model):
     def __str__(self):
         return f"ChildInterest({self.child.pk})"
 
-    
     class Meta:
         verbose_name = _("Interest")
         indexes = [
             models.Index(fields=["interest_id"], name="pk_idx"),
             models.Index(fields=["is_active", "is_deleted"], name="act_idx")
-
         ]
-        ordering = ("-created_at",)
+        ordering = ("-created_at", )
+
 
 class Instructor(models.Model):
-    instructor_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4, db_index=True)
+    instructor_id = models.UUIDField(primary_key=True,
+                                     unique=True,
+                                     max_length=20,
+                                     default=uuid.uuid4,
+                                     db_index=True)
 
     display_name = models.CharField(max_length=200, blank=True)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    user = models.OneToOneField(User,
+                                on_delete=models.CASCADE,
+                                related_name="profile")
 
     is_active = models.BooleanField(default=True, db_index=True)
 
@@ -112,11 +139,17 @@ class Instructor(models.Model):
 
     def __str__(self):
         return f"InstructorProfile({self.user.get_full_name_or_none()}, {self.is_active})"
-    
+
 
 class Certificates(models.Model):
-    user = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name="certificates")
-    certificate_id = models.UUIDField(primary_key=True, unique=True, max_length=20, default=uuid.uuid4, db_index=True)
+    user = models.ForeignKey(Instructor,
+                             on_delete=models.CASCADE,
+                             related_name="certificates")
+    certificate_id = models.UUIDField(primary_key=True,
+                                      unique=True,
+                                      max_length=20,
+                                      default=uuid.uuid4,
+                                      db_index=True)
     name = models.CharField(max_length=200)
     issued_on = models.DateField(null=True, blank=True)
     issued_by = models.CharField(max_length=200)
@@ -133,7 +166,6 @@ class Certificates(models.Model):
         verbose_name = _("Certificate")
 
         constraints = [
-            models.UniqueConstraint(fields=["user", "name"], name="unique_name_and_user")
+            models.UniqueConstraint(fields=["user", "name"],
+                                    name="unique_name_and_user")
         ]
-
-
