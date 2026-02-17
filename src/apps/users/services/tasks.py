@@ -41,7 +41,7 @@ def auto_expire_otp():
         expired_otps = OneTimePassword.objects.filter(
             created_at__lt=timezone.now() -
             timezone.timedelta(minutes=OTP_life_span)).update(
-                is_active=~F("is_active"))
+                is_active=False)
 
 
 @shared_task
@@ -50,4 +50,4 @@ def auto_deactivate_reset_code():
         PasswordReset.objects.filter(
             created_at__lt=timezone.now() -
             timezone.timedelta(minutes=OTP_life_span)).update(
-                is_active=~F("is_active"))
+                is_active=False)
