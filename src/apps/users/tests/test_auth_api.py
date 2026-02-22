@@ -1,8 +1,4 @@
-from tests_config.fixtures.fixtures_config import (api_client,
-                                                   authenticated_client, user,
-                                                   otp_code, password_reset,
-                                                   user_verification,
-                                                   setup_celery_test_config)
+
 from ..models import OneTimePassword, PasswordReset
 
 from rest_framework.test import APIClient
@@ -62,8 +58,8 @@ class TestAuth:
         assert response.status_code == status.HTTP_200_OK
         assert result.get("status") == "success"
 
-    def test_password_reset(self, api_client: APIClient, user, settings):
-        settings.CELERY_TASK_ALWAYS_EAGER = True
+    def test_password_reset(self, api_client: APIClient, user):
+        # settings.CELERY_TASK_ALWAYS_EAGER = True
         email = user.email
         password_reset_path = "/api/v1/auth/password/reset/"
         request_data = {"email": email}
