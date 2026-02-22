@@ -26,6 +26,7 @@ class TestUsers:
 
     def test_profile_mine_read_instructor(self, instructor_client: APIClient,
                                           instructor):
+        """ Test instructor profile (read view)"""
         profile_path = '/api/v1/profile/detail/'
         response = instructor_client.get(path=profile_path)
         result = response.json()

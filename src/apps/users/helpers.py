@@ -69,7 +69,7 @@ def _check_email_already_exists(valid_email: str) -> bool:
     if valid_email is None:
         raise ValidationError("email field is emapty")
     if User.objects.filter(email=valid_email, is_active=True,
-                           is_verified=True):
+                           is_verified=True).exists():
         return True
     return False
 
